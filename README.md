@@ -1,6 +1,6 @@
 # Auditoría 2026
 
-Dashboard web en React + Vite para importar y analizar el Excel oficial de auditorías.
+Dashboard web en React + Vite para visualizar y analizar el Excel oficial de auditorías.
 
 ## Ejecutar
 
@@ -9,15 +9,15 @@ npm install
 npm run dev
 ```
 
-Abrí la dirección indicada por Vite. El resumen está en `/` y la actualización de datos en `/admin`.
+Abrí la dirección indicada por Vite. El resumen está en `/`.
 
-## Actualizar el Excel
+## Actualizar el Excel publicado
 
-1. Abrí `/admin`.
-2. Seleccioná el Excel actualizado (`.xlsx`).
-3. El dashboard procesa las hojas Turno A-F, normaliza los encabezados y guarda el resultado en el navegador.
+1. Reemplazá `public/auditoria-2026.xlsx` por el Excel actualizado, conservando exactamente ese nombre.
+2. Ejecutá `npm run build` para comprobarlo localmente.
+3. Hacé commit y push al repositorio conectado a Vercel. Vercel creará el nuevo deploy automáticamente.
 
-El archivo entregado queda como carga inicial en `public/auditoria-2026.xlsx`. Una importación nueva reemplaza esos datos locales; no se usa base de datos.
+El sitio es sólo de lectura: no hay ruta ni interfaz pública para subir archivos. Cada deploy sirve el Excel incluido en `public/auditoria-2026.xlsx`, por lo que todos los visitantes ven los mismos datos. El historial de versiones queda en los commits de Git; el historial operativo mostrado depende de las filas que el Excel conserve.
 
 ## Verificación
 
