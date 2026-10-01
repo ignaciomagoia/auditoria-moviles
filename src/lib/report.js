@@ -50,13 +50,32 @@ const totalsFor = (records) => records.reduce((totals, record) => ({
   incompleteObservations: totals.incompleteObservations + record.incompleteObservations,
 }), { systemAlerts: 0, auditedAlerts: 0, notAudited: 0, reports: 0, incompleteObservations: 0 })
 
+const representedDaysFor = (record) => {
+  if (record.kind !== 'consolidated') return 1
+  if (record.coveredDates?.length) return record.coveredDates.length
+  const interval = intervalFor(record)
+  return interval ? Math.max(1, Math.round((interval.end - interval.start) / 86_400_000)) : 1
+}
+
+const auditorCountFor = (record) => record.auditorList?.length || String(record.auditors || '').split(/[,;/]+/).map((auditor) => auditor.trim()).filter(Boolean).length
+
+const auditorAverageFor = (records) => {
+  const days = records.reduce((total, record) => total + representedDaysFor(record), 0)
+  const auditorDays = records.reduce((total, record) => total + auditorCountFor(record) * representedDaysFor(record), 0)
+  return days ? auditorDays / (days * 3) * 100 : 0
+}
+
 export const calculateShiftPdfSummary = (records) => {
   const bounds = periodBoundsFor(records)
   const totals = totalsFor(records)
   return {
     period: bounds ? `${formatDate(bounds.start)} al ${formatDate(bounds.end)}` : 'Período no disponible',
     bounds,
-    totals: { ...totals, compliance: totals.systemAlerts ? totals.auditedAlerts / totals.systemAlerts * 100 : 0 },
+    totals: {
+      ...totals,
+      compliance: totals.systemAlerts ? totals.auditedAlerts / totals.systemAlerts * 100 : 0,
+      auditorAverage: auditorAverageFor(records),
+    },
   }
 }
 
@@ -72,14 +91,14 @@ export const calculateReportsByShift = (records, targetRecords) => {
 }
 
 const drawMetricCard = (pdf, { x, y, width, label, value, color }) => {
-  const height = 42
+  const height = 36
   pdf.setFillColor(250, 252, 253); pdf.roundedRect(x, y, width, height, 3, 3, 'F')
   pdf.setDrawColor(222, 231, 237); pdf.setLineWidth(.35); pdf.roundedRect(x, y, width, height, 3, 3, 'S')
   pdf.setFillColor(...color); pdf.roundedRect(x, y, width, 3.5, 2.6, 2.6, 'F')
   pdf.setTextColor(91, 112, 130); pdf.setFontSize(7.5); pdf.setFont('helvetica', 'bold')
-  pdf.text(label, x + 6, y + 14)
-  pdf.setTextColor(29, 51, 73); pdf.setFontSize(20); pdf.setFont('helvetica', 'bold')
-  pdf.text(value, x + 6, y + 30)
+  pdf.text(label, x + 6, y + 13)
+  pdf.setTextColor(29, 51, 73); pdf.setFontSize(18); pdf.setFont('helvetica', 'bold')
+  pdf.text(value, x + 6, y + 27)
 }
 
 const drawReportCard = (pdf, { x, y, shift, reports }) => {
@@ -91,16 +110,21 @@ const drawReportCard = (pdf, { x, y, shift, reports }) => {
   pdf.setTextColor(29, 51, 73); pdf.setFontSize(14); pdf.text(format.format(reports), x + 5, y + 14.2)
 }
 
-const drawObservation = (pdf, observation, color, shift) => {
+const drawObservation = (pdf, observation, color, shift, startY) => {
   if (!observation?.trim()) return
-  let y = 245
+  let y = startY
   const lines = [...pdf.splitTextToSize(observation.trim(), 168)]
-  let continuation = false
   while (lines.length) {
+    if (y + 6 + 24 > 279) {
+      pdf.addPage()
+      pdf.setFillColor(...color); pdf.rect(0, 0, 210, 20, 'F')
+      pdf.setTextColor(255, 255, 255); pdf.setFontSize(12); pdf.setFont('helvetica', 'bold'); pdf.text(`Informe de Auditoría - Turno ${shift}`, 14, 12)
+      y = 31
+    }
     const maxLines = Math.max(1, Math.floor((279 - (y + 6) - 15) / 5))
     const chunk = lines.splice(0, maxLines)
     const height = Math.max(24, chunk.length * 5 + 15)
-    pdf.setTextColor(35, 49, 64); pdf.setFontSize(11); pdf.setFont('helvetica', 'bold'); pdf.text(continuation ? 'OBSERVACIÓN (CONTINUACIÓN)' : 'OBSERVACIÓN', 14, y)
+    pdf.setTextColor(35, 49, 64); pdf.setFontSize(11); pdf.setFont('helvetica', 'bold'); pdf.text('OBSERVACIÓN', 14, y)
     pdf.setFillColor(250, 252, 253); pdf.roundedRect(14, y + 6, 182, height, 3, 3, 'F')
     pdf.setDrawColor(...color); pdf.setLineWidth(.35); pdf.roundedRect(14, y + 6, 182, height, 3, 3, 'S')
     pdf.setTextColor(55, 75, 92); pdf.setFontSize(9); pdf.setFont('helvetica', 'normal'); pdf.text(chunk, 21, y + 16)
@@ -109,7 +133,6 @@ const drawObservation = (pdf, observation, color, shift) => {
     pdf.setFillColor(...color); pdf.rect(0, 0, 210, 20, 'F')
     pdf.setTextColor(255, 255, 255); pdf.setFontSize(12); pdf.setFont('helvetica', 'bold'); pdf.text(`Informe de Auditoría - Turno ${shift}`, 14, 12)
     y = 31
-    continuation = true
   }
 }
 
@@ -130,15 +153,16 @@ export function downloadShiftPdf(shift, records, color, comparisonRecords, obser
     { label: 'ALERTAS DEL SISTEMA', value: format.format(totals.systemAlerts), x: 14, y: 65, width: 56 },
     { label: 'ALERTAS AUDITADAS', value: format.format(totals.auditedAlerts), x: 77, y: 65, width: 56 },
     { label: 'NO AUDITADAS', value: format.format(totals.notAudited), x: 140, y: 65, width: 56 },
-    { label: 'CUMPLIMIENTO', value: `${percentFormat.format(totals.compliance)}%`, x: 14, y: 115, width: 56 },
-    { label: 'INFORMES', value: format.format(totals.reports), x: 77, y: 115, width: 56 },
-    { label: 'OBS. INCOMPLETAS', value: format.format(totals.incompleteObservations), x: 140, y: 115, width: 56 },
+    { label: 'CUMPLIMIENTO', value: `${percentFormat.format(totals.compliance)}%`, x: 14, y: 108, width: 56 },
+    { label: 'INFORMES', value: format.format(totals.reports), x: 77, y: 108, width: 56 },
+    { label: 'OBS. INCOMPLETAS', value: format.format(totals.incompleteObservations), x: 140, y: 108, width: 56 },
+    { label: 'PROM. AUDITORES', value: `${percentFormat.format(totals.auditorAverage)}%`, x: 77, y: 151, width: 56 },
   ]
   cards.forEach((card) => drawMetricCard(pdf, { ...card, color: rgb }))
 
-  pdf.setTextColor(35, 49, 64); pdf.setFontSize(11); pdf.setFont('helvetica', 'bold'); pdf.text('INFORMES POR TURNO', 14, 174)
-  reportsByShift.forEach((item, index) => drawReportCard(pdf, { ...item, x: 14 + (index % 3) * 63, y: 181 + Math.floor(index / 3) * 25 }))
-  drawObservation(pdf, observation, rgb, shift)
+  pdf.setTextColor(35, 49, 64); pdf.setFontSize(11); pdf.setFont('helvetica', 'bold'); pdf.text('INFORMES POR TURNO', 14, 202)
+  reportsByShift.forEach((item, index) => drawReportCard(pdf, { ...item, x: 14 + (index % 3) * 63, y: 209 + Math.floor(index / 3) * 24 }))
+  drawObservation(pdf, observation, rgb, shift, 263)
 
   const pages = pdf.getNumberOfPages()
   for (let page = 1; page <= pages; page += 1) {
