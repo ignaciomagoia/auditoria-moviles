@@ -31,12 +31,12 @@ function Filters({ records, filters, setFilters }) {
   </div>
 }
 
-function ShiftBlocks({ records, filters }) {
+function ShiftBlocks({ records, onRequestPdf }) {
   return <section className="shift-list" aria-label="Resultados por turno">
     {TURNOS.map((shift) => {
       const shiftRecords = records.filter((record) => record.shift === shift)
       return <article className="shift-block" style={{ '--turn-color': TURN_COLORS[shift], '--turn-foreground': TURN_FOREGROUNDS[shift], '--turn-ink': TURN_INKS[shift] }} key={shift}>
-        <header className="shift-heading"><span className="shift-tag">{shift}</span><h2>Turno {shift}</h2><span className="record-count">{shiftRecords.length} {shiftRecords.length === 1 ? 'registro' : 'registros'}</span><button className="turn-pdf" disabled={!shiftRecords.length} onClick={() => downloadShiftPdf(shift, shiftRecords, filters, TURN_COLORS[shift])}><Download size={15} /> Descargar PDF</button></header>
+        <header className="shift-heading"><span className="shift-tag">{shift}</span><h2>Turno {shift}</h2><span className="record-count">{shiftRecords.length} {shiftRecords.length === 1 ? 'registro' : 'registros'}</span><button className="turn-pdf" disabled={!shiftRecords.length} onClick={() => onRequestPdf(shift, shiftRecords)}><Download size={15} /> Descargar PDF</button></header>
         {shiftRecords.length ? <div className="shift-rows">{shiftRecords.map((record) => <ShiftRow key={record.id} record={record} />)}</div> : <p className="no-records">No hay registros para los filtros seleccionados.</p>}
       </article>
     })}
@@ -68,13 +68,23 @@ function Charts({ records }) {
 
 function ChartCard({ title, children }) { return <article className="panel chart"><h2>{title}</h2><div className="chart-body">{children}</div></article> }
 
+function PdfModal({ request, observation, onObservationChange, onCancel, onGenerate }) {
+  if (!request) return null
+  return <div className="pdf-modal-backdrop" role="presentation"><section className="pdf-modal" role="dialog" aria-modal="true" aria-labelledby="pdf-modal-title"><h2 id="pdf-modal-title">Generar informe - Turno {request.shift}</h2><label htmlFor="pdf-observation">Observación del informe</label><textarea id="pdf-observation" value={observation} onChange={(event) => onObservationChange(event.target.value)} placeholder="Escriba una observación para incluir en el informe..." rows="5" autoFocus /><div className="modal-actions"><button className="modal-cancel" onClick={onCancel}>Cancelar</button><button className="primary" onClick={onGenerate}>Generar PDF</button></div></section></div>
+}
+
 export default function App() {
   const [records, setRecords] = useState([])
   const [filters, setFilters] = useState({ month: 'Todos', week: 'Todas', auditor: 'Todos' })
+  const [pdfRequest, setPdfRequest] = useState(null)
+  const [pdfObservation, setPdfObservation] = useState('')
   useEffect(() => { fetch('/auditoria-2026.xlsx', { cache: 'no-store' }).then((response) => response.ok ? response.arrayBuffer() : Promise.reject()).then((buffer) => setRecords(parseWorkbook(buffer).records)).catch(() => {}) }, [])
   const availableRecords = useMemo(() => excludeReplacedDailyRecords(records), [records])
-  const filtered = useMemo(() => availableRecords.filter((record) => (filters.month === 'Todos' || record.month === filters.month) && (filters.week === 'Todas' || record.week === filters.week) && (filters.auditor === 'Todos' || record.auditorList.includes(filters.auditor))).sort((a, b) => b.sortDate.localeCompare(a.sortDate) || a.shift.localeCompare(b.shift)), [availableRecords, filters])
-  return <><Header active="dashboard" /><main className="app-shell"><section className="intro"><div><p className="eyebrow">Control operativo · 2026</p><h1>Auditoría 2026</h1><p>Seguimiento de alertas y cumplimiento por turno.</p></div></section><Filters records={availableRecords} filters={filters} setFilters={setFilters} /><ShiftBlocks records={filtered} filters={filters} /><Charts records={filtered} /></main></>
+  const periodRecords = useMemo(() => availableRecords.filter((record) => (filters.month === 'Todos' || record.month === filters.month) && (filters.week === 'Todas' || record.week === filters.week)).sort((a, b) => b.sortDate.localeCompare(a.sortDate) || a.shift.localeCompare(b.shift)), [availableRecords, filters.month, filters.week])
+  const filtered = useMemo(() => periodRecords.filter((record) => filters.auditor === 'Todos' || record.auditorList.includes(filters.auditor)), [periodRecords, filters.auditor])
+  const requestPdf = (shift, shiftRecords) => { setPdfObservation(''); setPdfRequest({ shift, records: shiftRecords }) }
+  const generatePdf = () => { if (!pdfRequest) return; downloadShiftPdf(pdfRequest.shift, pdfRequest.records, TURN_COLORS[pdfRequest.shift], periodRecords, pdfObservation); setPdfRequest(null); setPdfObservation('') }
+  return <><Header active="dashboard" /><main className="app-shell"><section className="intro"><div><p className="eyebrow">Control operativo · 2026</p><h1>Auditoría 2026</h1><p>Seguimiento de alertas y cumplimiento por turno.</p></div></section><Filters records={availableRecords} filters={filters} setFilters={setFilters} /><ShiftBlocks records={filtered} onRequestPdf={requestPdf} /><Charts records={filtered} /></main><PdfModal request={pdfRequest} observation={pdfObservation} onObservationChange={setPdfObservation} onCancel={() => { setPdfRequest(null); setPdfObservation('') }} onGenerate={generatePdf} /></>
 }
 
 function Header() { return <header className="topbar"><a className="brand" href="/"><span className="brand-mark"><BarChart3 size={19} /></span><span>Auditoría <b>2026</b></span></a></header> }
