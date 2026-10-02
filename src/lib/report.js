@@ -118,7 +118,7 @@ const drawObservation = (pdf, observation, color, shift, startY) => {
     if (y + 6 + 24 > 279) {
       pdf.addPage()
       pdf.setFillColor(...color); pdf.rect(0, 0, 210, 20, 'F')
-      pdf.setTextColor(255, 255, 255); pdf.setFontSize(12); pdf.setFont('helvetica', 'bold'); pdf.text(`Informe de Auditoría - Turno ${shift}`, 14, 12)
+      pdf.setTextColor(255, 255, 255); pdf.setFontSize(12); pdf.setFont('helvetica', 'bold'); pdf.text(`Informe de Auditoría Móviles - Turno ${shift}`, 14, 12)
       y = 31
     }
     const maxLines = Math.max(1, Math.floor((279 - (y + 6) - 15) / 5))
@@ -131,7 +131,7 @@ const drawObservation = (pdf, observation, color, shift, startY) => {
     if (!lines.length) break
     pdf.addPage()
     pdf.setFillColor(...color); pdf.rect(0, 0, 210, 20, 'F')
-    pdf.setTextColor(255, 255, 255); pdf.setFontSize(12); pdf.setFont('helvetica', 'bold'); pdf.text(`Informe de Auditoría - Turno ${shift}`, 14, 12)
+    pdf.setTextColor(255, 255, 255); pdf.setFontSize(12); pdf.setFont('helvetica', 'bold'); pdf.text(`Informe de Auditoría Móviles - Turno ${shift}`, 14, 12)
     y = 31
   }
 }
@@ -143,7 +143,7 @@ export function downloadShiftPdf(shift, records, color, comparisonRecords, obser
   const reportsByShift = calculateReportsByShift(comparisonRecords, records)
 
   pdf.setFillColor(...rgb); pdf.rect(0, 0, 210, 32, 'F')
-  pdf.setTextColor(255, 255, 255); pdf.setFontSize(18); pdf.setFont('helvetica', 'bold'); pdf.text(`Informe de Auditoría - Turno ${shift}`, 14, 14)
+  pdf.setTextColor(255, 255, 255); pdf.setFontSize(18); pdf.setFont('helvetica', 'bold'); pdf.text(`Informe de Auditoría Móviles - Turno ${shift}`, 14, 14)
   pdf.setFontSize(9); pdf.setFont('helvetica', 'normal'); pdf.text('Resumen ejecutivo del período', 14, 22)
   pdf.setTextColor(35, 49, 64); pdf.setFontSize(10); pdf.setFont('helvetica', 'bold'); pdf.text(`Período: ${period}`, 14, 43)
   pdf.setDrawColor(...rgb); pdf.setLineWidth(.7); pdf.line(14, 49, 196, 49)
@@ -170,5 +170,5 @@ export function downloadShiftPdf(shift, records, color, comparisonRecords, obser
     pdf.text(`Auditoría 2026 · Turno ${shift}`, 14, 289)
     pdf.text(`Página ${page} de ${pages}`, 176, 289)
   }
-  pdf.save(`informe-auditoria-2026-turno-${shift.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.pdf`)
+  pdf.save(`informe-auditoria-moviles-turno-${shift.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.pdf`)
 }
