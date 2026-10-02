@@ -91,14 +91,14 @@ export const calculateReportsByShift = (records, targetRecords) => {
 }
 
 const drawMetricCard = (pdf, { x, y, width, label, value, color }) => {
-  const height = 36
+  const height = 32
   pdf.setFillColor(250, 252, 253); pdf.roundedRect(x, y, width, height, 3, 3, 'F')
   pdf.setDrawColor(222, 231, 237); pdf.setLineWidth(.35); pdf.roundedRect(x, y, width, height, 3, 3, 'S')
   pdf.setFillColor(...color); pdf.roundedRect(x, y, width, 3.5, 2.6, 2.6, 'F')
   pdf.setTextColor(91, 112, 130); pdf.setFontSize(7.5); pdf.setFont('helvetica', 'bold')
-  pdf.text(label, x + 6, y + 13)
-  pdf.setTextColor(29, 51, 73); pdf.setFontSize(18); pdf.setFont('helvetica', 'bold')
-  pdf.text(value, x + 6, y + 27)
+  pdf.text(label, x + 6, y + 12)
+  pdf.setTextColor(29, 51, 73); pdf.setFontSize(16); pdf.setFont('helvetica', 'bold')
+  pdf.text(value, x + 6, y + 24)
 }
 
 const drawReportCard = (pdf, { x, y, shift, reports }) => {
@@ -153,16 +153,16 @@ export function downloadShiftPdf(shift, records, color, comparisonRecords, obser
     { label: 'ALERTAS DEL SISTEMA', value: format.format(totals.systemAlerts), x: 14, y: 65, width: 56 },
     { label: 'ALERTAS AUDITADAS', value: format.format(totals.auditedAlerts), x: 77, y: 65, width: 56 },
     { label: 'NO AUDITADAS', value: format.format(totals.notAudited), x: 140, y: 65, width: 56 },
-    { label: 'CUMPLIMIENTO', value: `${percentFormat.format(totals.compliance)}%`, x: 14, y: 108, width: 56 },
-    { label: 'INFORMES', value: format.format(totals.reports), x: 77, y: 108, width: 56 },
-    { label: 'OBS. INCOMPLETAS', value: format.format(totals.incompleteObservations), x: 140, y: 108, width: 56 },
-    { label: 'PROM. AUDITORES', value: `${percentFormat.format(totals.auditorAverage)}%`, x: 77, y: 151, width: 56 },
+    { label: 'CUMPLIMIENTO', value: `${percentFormat.format(totals.compliance)}%`, x: 14, y: 102, width: 56 },
+    { label: 'INFORMES', value: format.format(totals.reports), x: 77, y: 102, width: 56 },
+    { label: 'OBS. INCOMPLETAS', value: format.format(totals.incompleteObservations), x: 140, y: 102, width: 56 },
+    { label: 'PROM. AUDITORES', value: `${percentFormat.format(totals.auditorAverage)}%`, x: 77, y: 139, width: 56 },
   ]
   cards.forEach((card) => drawMetricCard(pdf, { ...card, color: rgb }))
 
-  pdf.setTextColor(35, 49, 64); pdf.setFontSize(11); pdf.setFont('helvetica', 'bold'); pdf.text('INFORMES POR TURNO', 14, 202)
-  reportsByShift.forEach((item, index) => drawReportCard(pdf, { ...item, x: 14 + (index % 3) * 63, y: 209 + Math.floor(index / 3) * 24 }))
-  drawObservation(pdf, observation, rgb, shift, 263)
+  pdf.setTextColor(35, 49, 64); pdf.setFontSize(11); pdf.setFont('helvetica', 'bold'); pdf.text('INFORMES POR TURNO', 14, 181)
+  reportsByShift.forEach((item, index) => drawReportCard(pdf, { ...item, x: 14 + (index % 3) * 63, y: 188 + Math.floor(index / 3) * 24 }))
+  drawObservation(pdf, observation, rgb, shift, 244)
 
   const pages = pdf.getNumberOfPages()
   for (let page = 1; page <= pages; page += 1) {
