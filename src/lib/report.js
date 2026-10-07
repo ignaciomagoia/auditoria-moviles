@@ -79,8 +79,11 @@ export const calculateShiftPdfSummary = (records) => {
   }
 }
 
-export const calculateReportsByShift = (records, targetRecords) => {
-  const bounds = periodBoundsFor(targetRecords)
+export const calculateReportsByShift = (records) => {
+  // El resumen compara los informes de todos los turnos dentro del período
+  // elegido en los filtros. No debe acotarse a los días en que el turno del
+  // PDF tuvo registros: un turno puede no trabajar un día y otro sí.
+  const bounds = periodBoundsFor(records)
   return TURNOS.map((shift) => ({
     shift,
     reports: records.filter((record) => {
@@ -140,7 +143,7 @@ export function downloadShiftPdf(shift, records, color, comparisonRecords, obser
   const pdf = new jsPDF({ unit: 'mm', format: 'a4' })
   const rgb = hexToRgb(color)
   const { period, totals } = calculateShiftPdfSummary(records)
-  const reportsByShift = calculateReportsByShift(comparisonRecords, records)
+  const reportsByShift = calculateReportsByShift(comparisonRecords)
 
   pdf.setFillColor(...rgb); pdf.rect(0, 0, 210, 32, 'F')
   pdf.setTextColor(255, 255, 255); pdf.setFontSize(18); pdf.setFont('helvetica', 'bold'); pdf.text(`Informe de Auditoría Móviles - Turno ${shift}`, 14, 14)
