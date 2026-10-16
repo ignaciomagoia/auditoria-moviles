@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf'
+import { mobileAuditSummaries } from '../data/mobileAuditSummaries.js'
 
 const TURNOS = ['A', 'B', 'C', 'D', 'E', 'F']
 const TURN_COLORS = { A: '#7030A0', B: '#274E13', C: '#FF0000', D: '#1155CC', E: '#00FFFF', F: '#FF00FF' }
@@ -93,6 +94,28 @@ export const calculateReportsByShift = (records) => {
   }))
 }
 
+export const calculateResourceSummary = (shift, records) => {
+  const bounds = periodBoundsFor(records)
+  if (!bounds) return { hasData: false, letters: 0, assigned: 0, unassigned: 0, compliance: 0 }
+  const start = bounds.start.toISOString().slice(0, 10)
+  const end = bounds.end.toISOString().slice(0, 10)
+  const summaries = mobileAuditSummaries.filter((summary) => summary.startDate <= end && summary.endDate >= start)
+  const totals = summaries.reduce((total, summary) => {
+    const entry = summary.shifts.find((item) => item.shift === shift)
+    if (!entry) return total
+    return {
+      letters: total.letters + entry.letters,
+      assigned: total.assigned + entry.assigned,
+      unassigned: total.unassigned + entry.unassigned,
+    }
+  }, { letters: 0, assigned: 0, unassigned: 0 })
+  return {
+    hasData: summaries.some((summary) => summary.shifts.some((item) => item.shift === shift)),
+    ...totals,
+    compliance: totals.letters ? totals.assigned / totals.letters * 100 : 0,
+  }
+}
+
 const drawMetricCard = (pdf, { x, y, width, label, value, color }) => {
   const height = 30
   pdf.setFillColor(250, 252, 253); pdf.roundedRect(x, y, width, height, 3, 3, 'F')
@@ -113,7 +136,19 @@ const drawReportCard = (pdf, { x, y, shift, reports }) => {
   pdf.setTextColor(29, 51, 73); pdf.setFontSize(14); pdf.text(format.format(reports), x + 5, y + 14.2)
 }
 
-const drawObservation = (pdf, observation, color, shift, startY) => {
+const drawResourceCard = (pdf, { x, y, label, value, color }) => {
+  const width = 88
+  const height = 36
+  pdf.setFillColor(250, 252, 253); pdf.roundedRect(x, y, width, height, 3, 3, 'F')
+  pdf.setDrawColor(222, 231, 237); pdf.setLineWidth(.35); pdf.roundedRect(x, y, width, height, 3, 3, 'S')
+  pdf.setFillColor(...color); pdf.roundedRect(x, y, width, 3.5, 2.6, 2.6, 'F')
+  pdf.setTextColor(91, 112, 130); pdf.setFontSize(7); pdf.setFont('helvetica', 'bold')
+  pdf.text(pdf.splitTextToSize(label, 76), x + 6, y + 12)
+  pdf.setTextColor(29, 51, 73); pdf.setFontSize(18); pdf.setFont('helvetica', 'bold')
+  pdf.text(value, x + 6, y + 29)
+}
+
+const drawObservation = (pdf, observation, color, startY) => {
   if (!observation?.trim()) return
   let y = startY
   const lines = [...pdf.splitTextToSize(observation.trim(), 168)]
@@ -121,7 +156,7 @@ const drawObservation = (pdf, observation, color, shift, startY) => {
     if (y + 6 + 24 > 279) {
       pdf.addPage()
       pdf.setFillColor(...color); pdf.rect(0, 0, 210, 20, 'F')
-      pdf.setTextColor(255, 255, 255); pdf.setFontSize(12); pdf.setFont('helvetica', 'bold'); pdf.text(`Informe de Auditoría Móviles - Turno ${shift}`, 14, 12)
+      pdf.setTextColor(255, 255, 255); pdf.setFontSize(12); pdf.setFont('helvetica', 'bold'); pdf.text('RESUMEN DE AUDITORÍA MÓVILES', 14, 12)
       y = 31
     }
     const maxLines = Math.max(1, Math.floor((279 - (y + 6) - 15) / 5))
@@ -134,9 +169,31 @@ const drawObservation = (pdf, observation, color, shift, startY) => {
     if (!lines.length) break
     pdf.addPage()
     pdf.setFillColor(...color); pdf.rect(0, 0, 210, 20, 'F')
-    pdf.setTextColor(255, 255, 255); pdf.setFontSize(12); pdf.setFont('helvetica', 'bold'); pdf.text(`Informe de Auditoría Móviles - Turno ${shift}`, 14, 12)
+    pdf.setTextColor(255, 255, 255); pdf.setFontSize(12); pdf.setFont('helvetica', 'bold'); pdf.text('RESUMEN DE AUDITORÍA MÓVILES', 14, 12)
     y = 31
   }
+}
+
+const drawResourcesSummaryPage = (pdf, resourceSummary, color, shift, observation) => {
+  pdf.addPage()
+  pdf.setFillColor(...color); pdf.rect(0, 0, 210, 32, 'F')
+  pdf.setTextColor(255, 255, 255); pdf.setFontSize(18); pdf.setFont('helvetica', 'bold'); pdf.text('RESUMEN DE AUDITORÍA MÓVILES', 14, 14)
+  pdf.setFontSize(9); pdf.setFont('helvetica', 'normal'); pdf.text(`Turno ${shift} · Recursos asignados`, 14, 22)
+  pdf.setTextColor(35, 49, 64); pdf.setFontSize(11); pdf.setFont('helvetica', 'bold'); pdf.text('RECURSOS ASIGNADOS', 14, 45)
+  pdf.setDrawColor(...color); pdf.setLineWidth(.7); pdf.line(14, 51, 196, 51)
+  const value = (number) => resourceSummary.hasData ? format.format(number) : '—'
+  const cards = [
+    { label: 'TOTAL EVENTOS', value: value(resourceSummary.letters), x: 14, y: 59 },
+    { label: 'CARTAS CON RECURSOS ASIGNADOS', value: value(resourceSummary.assigned), x: 108, y: 59 },
+    { label: 'CARTAS SIN RECURSOS ASIGNADOS', value: value(resourceSummary.unassigned), x: 14, y: 103 },
+    { label: 'CUMPLIMIENTO', value: resourceSummary.hasData ? `${percentFormat.format(resourceSummary.compliance)}%` : '—', x: 108, y: 103 },
+  ]
+  cards.forEach((card) => drawResourceCard(pdf, { ...card, color }))
+  if (!resourceSummary.hasData) {
+    pdf.setTextColor(113, 131, 145); pdf.setFontSize(8.5); pdf.setFont('helvetica', 'normal')
+    pdf.text('No hay datos de recursos cargados para el período seleccionado.', 14, 151)
+  }
+  drawObservation(pdf, observation, color, 170)
 }
 
 export function downloadShiftPdf(shift, records, color, comparisonRecords, observation) {
@@ -144,10 +201,11 @@ export function downloadShiftPdf(shift, records, color, comparisonRecords, obser
   const rgb = hexToRgb(color)
   const { period, totals } = calculateShiftPdfSummary(records)
   const reportsByShift = calculateReportsByShift(comparisonRecords)
+  const resourceSummary = calculateResourceSummary(shift, comparisonRecords)
 
   pdf.setFillColor(...rgb); pdf.rect(0, 0, 210, 32, 'F')
-  pdf.setTextColor(255, 255, 255); pdf.setFontSize(18); pdf.setFont('helvetica', 'bold'); pdf.text(`Informe de Auditoría Móviles - Turno ${shift}`, 14, 14)
-  pdf.setFontSize(9); pdf.setFont('helvetica', 'normal'); pdf.text('Resumen ejecutivo del período', 14, 22)
+  pdf.setTextColor(255, 255, 255); pdf.setFontSize(18); pdf.setFont('helvetica', 'bold'); pdf.text('INFORME SEMANAL', 14, 14)
+  pdf.setFontSize(9); pdf.setFont('helvetica', 'normal'); pdf.text(`Turno ${shift} · Resumen ejecutivo del período`, 14, 22)
   pdf.setTextColor(35, 49, 64); pdf.setFontSize(10); pdf.setFont('helvetica', 'bold'); pdf.text(`Período: ${period}`, 14, 43)
   pdf.setDrawColor(...rgb); pdf.setLineWidth(.7); pdf.line(14, 49, 196, 49)
 
@@ -165,12 +223,12 @@ export function downloadShiftPdf(shift, records, color, comparisonRecords, obser
 
   pdf.setTextColor(35, 49, 64); pdf.setFontSize(11); pdf.setFont('helvetica', 'bold'); pdf.text('INFORMES POR TURNO', 14, 145)
   reportsByShift.forEach((item, index) => drawReportCard(pdf, { ...item, x: 14 + (index % 3) * 63, y: 152 + Math.floor(index / 3) * 24 }))
-  drawObservation(pdf, observation, rgb, shift, 210)
+  drawResourcesSummaryPage(pdf, resourceSummary, rgb, shift, observation)
 
   const pages = pdf.getNumberOfPages()
   for (let page = 1; page <= pages; page += 1) {
     pdf.setPage(page); pdf.setTextColor(110, 128, 144); pdf.setFontSize(8); pdf.setFont('helvetica', 'normal')
-    pdf.text(`Auditoría 2026 · Turno ${shift}`, 14, 289)
+    pdf.text(`Auditoría Móviles · Turno ${shift}`, 14, 289)
     pdf.text(`Página ${page} de ${pages}`, 176, 289)
   }
   pdf.save(`informe-auditoria-moviles-turno-${shift.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.pdf`)

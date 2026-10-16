@@ -3,6 +3,7 @@ import { BarChart3, Download, RotateCcw } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { excludeReplacedDailyRecords, parseWorkbook } from './lib/excel'
 import { downloadShiftPdf } from './lib/report'
+import { mobileAuditSummaries } from './data/mobileAuditSummaries.js'
 
 const TURNOS = ['A', 'B', 'C', 'D', 'E', 'F']
 const TURN_COLORS = { A: '#7030A0', B: '#274E13', C: '#FF0000', D: '#1155CC', E: '#00FFFF', F: '#FF00FF' }
@@ -16,7 +17,7 @@ const totalsOf = (records) => {
   return { compliance: systemAlerts ? auditedAlerts / systemAlerts * 100 : 0 }
 }
 
-function Filters({ records, filters, setFilters }) {
+function Filters({ records, filters, setFilters, view, setView }) {
   const options = {
     month: ['Todos', ...Array.from(new Set(records.map((record) => record.month))).sort()],
     week: ['Todas', ...Array.from(new Set(records.map((record) => record.week))).sort((a, b) => a.localeCompare(b, 'es'))],
@@ -24,11 +25,30 @@ function Filters({ records, filters, setFilters }) {
   }
   const update = (key) => (event) => setFilters((current) => ({ ...current, [key]: event.target.value }))
   return <div className="filters simplified-filters">
+    <label>Contenido<select value={view} onChange={(event) => setView(event.target.value)}><option value="audits">Auditorías por turno</option><option value="mobile-summary">Resumen de Auditoría Móviles</option></select></label>
     <label>Mes / período<select value={filters.month} onChange={update('month')}>{options.month.map((item) => <option key={item}>{item}</option>)}</select></label>
     <label>Semana<select value={filters.week} onChange={update('week')}>{options.week.map((item) => <option key={item}>{item}</option>)}</select></label>
     <label>Auditor<select value={filters.auditor} onChange={update('auditor')}>{options.auditor.map((item) => <option key={item}>{item}</option>)}</select></label>
     <button className="clear" onClick={() => setFilters({ month: 'Todos', week: 'Todas', auditor: 'Todos' })}><RotateCcw size={16} /> Limpiar filtros</button>
   </div>
+}
+
+function MobileAuditSummary({ filters }) {
+  const summaries = mobileAuditSummaries.filter((summary) => (
+    (filters.month === 'Todos' || summary.month === filters.month)
+    && (filters.week === 'Todas' || summary.week === filters.week)
+  ))
+
+  return <section className="mobile-summary" aria-label="Resumen de Auditoría Móviles">
+    <div className="summary-heading"><div><p className="eyebrow">Control operativo</p><h2>Resumen de Auditoría Móviles</h2><p>Cartas asignadas y no asignadas por turno.</p></div></div>
+    {summaries.length ? summaries.map((summary) => <section className="summary-period" key={`${summary.year}-${summary.week}`}>
+      <h3>Semana {summary.week}</h3>
+      <div className="summary-turn-grid">{summary.shifts.map((item) => <article className="summary-turn-card" style={{ '--turn-color': TURN_COLORS[item.shift], '--turn-foreground': TURN_FOREGROUNDS[item.shift] }} key={item.shift}>
+        <header><span className="shift-tag">{item.shift}</span><h4>Turno {item.shift}</h4></header>
+        <dl><div><dt>Cartas</dt><dd>{format.format(item.letters)}</dd></div><div><dt>No asignados</dt><dd>{format.format(item.unassigned)}</dd></div><div><dt>Asignados</dt><dd>{format.format(item.assigned)}</dd></div></dl>
+      </article>)}</div>
+    </section>) : <p className="summary-empty">No hay un resumen de Auditoría Móviles cargado para los filtros seleccionados.</p>}
+  </section>
 }
 
 function ShiftBlocks({ records, onRequestPdf }) {
@@ -76,6 +96,7 @@ function PdfModal({ request, observation, onObservationChange, onCancel, onGener
 export default function App() {
   const [records, setRecords] = useState([])
   const [filters, setFilters] = useState({ month: 'Todos', week: 'Todas', auditor: 'Todos' })
+  const [view, setView] = useState('audits')
   const [pdfRequest, setPdfRequest] = useState(null)
   const [pdfObservation, setPdfObservation] = useState('')
   useEffect(() => { fetch('/auditoria-2026.xlsx', { cache: 'no-store' }).then((response) => response.ok ? response.arrayBuffer() : Promise.reject()).then((buffer) => setRecords(parseWorkbook(buffer).records)).catch(() => {}) }, [])
@@ -85,7 +106,7 @@ export default function App() {
   const filtered = useMemo(() => periodRecords.filter((record) => filters.auditor === 'Todos' || record.auditorList.includes(filters.auditor)), [periodRecords, filters.auditor])
   const requestPdf = (shift, shiftRecords) => { setPdfObservation(''); setPdfRequest({ shift, records: shiftRecords }) }
   const generatePdf = () => { if (!pdfRequest) return; downloadShiftPdf(pdfRequest.shift, pdfRequest.records, TURN_COLORS[pdfRequest.shift], periodRecords, pdfObservation); setPdfRequest(null); setPdfObservation('') }
-  return <><Header active="dashboard" /><main className="app-shell"><section className="intro"><div><p className="eyebrow">Última semana cargada · {latestWeek}</p><h1>Auditoría de móviles</h1><p>Seguimiento de alertas y cumplimiento por turno.</p></div></section><Filters records={availableRecords} filters={filters} setFilters={setFilters} /><ShiftBlocks records={filtered} onRequestPdf={requestPdf} /><Charts records={filtered} /></main><PdfModal request={pdfRequest} observation={pdfObservation} onObservationChange={setPdfObservation} onCancel={() => { setPdfRequest(null); setPdfObservation('') }} onGenerate={generatePdf} /></>
+  return <><Header active="dashboard" /><main className="app-shell"><section className="intro"><div><p className="eyebrow">Última semana cargada · {latestWeek}</p><h1>Auditoría de móviles</h1><p>Seguimiento de alertas y cumplimiento por turno.</p></div></section><Filters records={availableRecords} filters={filters} setFilters={setFilters} view={view} setView={setView} />{view === 'mobile-summary' ? <MobileAuditSummary filters={filters} /> : <><ShiftBlocks records={filtered} onRequestPdf={requestPdf} /><Charts records={filtered} /></>}</main><PdfModal request={pdfRequest} observation={pdfObservation} onObservationChange={setPdfObservation} onCancel={() => { setPdfRequest(null); setPdfObservation('') }} onGenerate={generatePdf} /></>
 }
 
 function Header() { return <header className="topbar"><a className="brand" href="/"><span className="brand-mark"><BarChart3 size={19} /></span><span>Auditoría <b>2026</b></span></a></header> }

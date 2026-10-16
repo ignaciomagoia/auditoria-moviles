@@ -9,6 +9,7 @@ import re
 import shutil
 import tempfile
 import zipfile
+from datetime import date, timedelta
 from decimal import Decimal
 from pathlib import Path
 from xml.etree import ElementTree as ET
@@ -17,6 +18,7 @@ MAIN_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 XML_NS = "http://www.w3.org/XML/1998/namespace"
 NS = {"x": MAIN_NS}
 CELL_REF = re.compile(r"([A-Z]+)(\d+)$")
+EXCEL_EPOCH = date(1899, 12, 30)
 
 
 def q(name: str) -> str:
@@ -63,6 +65,14 @@ def date_key(value: str) -> str:
         return ""
 
 
+def calendar_date(value: str) -> date | None:
+    """Return an Excel serial date as a calendar date, when applicable."""
+    try:
+        return EXCEL_EPOCH + timedelta(days=int(Decimal(value)))
+    except Exception:
+        return None
+
+
 def rows_by_number(sheet: ET.Element) -> dict[int, ET.Element]:
     return {int(row.get("r")): row for row in sheet.findall("x:sheetData/x:row", NS)}
 
@@ -98,7 +108,7 @@ def numeric_cell(reference: str, style: str | None, value: str) -> ET.Element:
     return cell
 
 
-def append_daily_rows(master_xml: bytes, source_xml: bytes, master_strings: list[str], source_strings: list[str]) -> tuple[bytes, int, list[str]]:
+def append_daily_rows(master_xml: bytes, source_xml: bytes, master_strings: list[str], source_strings: list[str], start_date: date | None, end_date: date | None) -> tuple[bytes, int, list[str]]:
     master = ET.fromstring(master_xml)
     source = ET.fromstring(source_xml)
     master_rows = rows_by_number(master)
@@ -125,9 +135,10 @@ def append_daily_rows(master_xml: bytes, source_xml: bytes, master_strings: list
 
     for number in sorted(source_rows):
         source_cells = cells_by_column(source_rows[number])
-        date_value = cell_value(source_cells.get("A"), source_strings)
-        key = date_key(date_value)
-        if not key or key in existing_dates:
+        source_date_value = cell_value(source_cells.get("A"), source_strings)
+        key = date_key(source_date_value)
+        record_date = calendar_date(source_date_value)
+        if not key or key in existing_dates or (start_date and record_date and record_date < start_date) or (end_date and record_date and record_date > end_date):
             continue
         target_row = master_rows.get(destination)
         if target_row is None:
@@ -149,13 +160,13 @@ def append_daily_rows(master_xml: bytes, source_xml: bytes, master_strings: list
             target_row.remove(cell)
         target_row.extend(ordered_cells)
         existing_dates.add(key)
-        added.append(date_value)
+        added.append(source_date_value)
         destination += 1
 
     return ET.tostring(master, encoding="utf-8", xml_declaration=True), len(added), added
 
 
-def merge(source_path: Path, master_path: Path, apply: bool) -> None:
+def merge(source_path: Path, master_path: Path, apply: bool, start_date: date | None, end_date: date | None) -> None:
     with zipfile.ZipFile(source_path) as source_archive, zipfile.ZipFile(master_path) as master_archive:
         master_strings = shared_strings(master_archive)
         source_strings = shared_strings(source_archive)
@@ -163,7 +174,7 @@ def merge(source_path: Path, master_path: Path, apply: bool) -> None:
         report: list[tuple[str, int, list[str]]] = []
         for index, sheet_name in enumerate(["TURNO A", "TURNO B", "TURNO C", "TURNO D", "TURNO E ", "TURNO F"], start=1):
             member = f"xl/worksheets/sheet{index}.xml"
-            xml, count, dates = append_daily_rows(master_archive.read(member), source_archive.read(member), master_strings, source_strings)
+            xml, count, dates = append_daily_rows(master_archive.read(member), source_archive.read(member), master_strings, source_strings, start_date, end_date)
             replacements[member] = xml
             report.append((sheet_name.strip(), count, dates))
 
@@ -209,5 +220,7 @@ if __name__ == "__main__":
     parser.add_argument("--source", required=True, type=Path)
     parser.add_argument("--master", required=True, type=Path)
     parser.add_argument("--apply", action="store_true")
+    parser.add_argument("--start-date", type=date.fromisoformat, help="First daily record to import (YYYY-MM-DD)")
+    parser.add_argument("--end-date", type=date.fromisoformat, help="Last daily record to import (YYYY-MM-DD)")
     arguments = parser.parse_args()
-    merge(arguments.source, arguments.master, arguments.apply)
+    merge(arguments.source, arguments.master, arguments.apply, arguments.start_date, arguments.end_date)
