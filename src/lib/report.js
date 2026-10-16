@@ -156,7 +156,7 @@ const drawObservation = (pdf, observation, color, startY) => {
     if (y + 6 + 24 > 279) {
       pdf.addPage()
       pdf.setFillColor(...color); pdf.rect(0, 0, 210, 20, 'F')
-      pdf.setTextColor(255, 255, 255); pdf.setFontSize(12); pdf.setFont('helvetica', 'bold'); pdf.text('RESUMEN DE AUDITORÍA MÓVILES', 14, 12)
+      pdf.setTextColor(255, 255, 255); pdf.setFontSize(12); pdf.setFont('helvetica', 'bold'); pdf.text('INFORME SEMANAL', 14, 12)
       y = 31
     }
     const maxLines = Math.max(1, Math.floor((279 - (y + 6) - 15) / 5))
@@ -169,7 +169,7 @@ const drawObservation = (pdf, observation, color, startY) => {
     if (!lines.length) break
     pdf.addPage()
     pdf.setFillColor(...color); pdf.rect(0, 0, 210, 20, 'F')
-    pdf.setTextColor(255, 255, 255); pdf.setFontSize(12); pdf.setFont('helvetica', 'bold'); pdf.text('RESUMEN DE AUDITORÍA MÓVILES', 14, 12)
+    pdf.setTextColor(255, 255, 255); pdf.setFontSize(12); pdf.setFont('helvetica', 'bold'); pdf.text('INFORME SEMANAL', 14, 12)
     y = 31
   }
 }
@@ -177,7 +177,7 @@ const drawObservation = (pdf, observation, color, startY) => {
 const drawResourcesSummaryPage = (pdf, resourceSummary, color, shift, observation) => {
   pdf.addPage()
   pdf.setFillColor(...color); pdf.rect(0, 0, 210, 32, 'F')
-  pdf.setTextColor(255, 255, 255); pdf.setFontSize(18); pdf.setFont('helvetica', 'bold'); pdf.text('RESUMEN DE AUDITORÍA MÓVILES', 14, 14)
+  pdf.setTextColor(255, 255, 255); pdf.setFontSize(18); pdf.setFont('helvetica', 'bold'); pdf.text('INFORME SEMANAL', 14, 14)
   pdf.setFontSize(9); pdf.setFont('helvetica', 'normal'); pdf.text(`Turno ${shift} · Recursos asignados`, 14, 22)
   pdf.setTextColor(35, 49, 64); pdf.setFontSize(11); pdf.setFont('helvetica', 'bold'); pdf.text('RECURSOS ASIGNADOS', 14, 45)
   pdf.setDrawColor(...color); pdf.setLineWidth(.7); pdf.line(14, 51, 196, 51)
@@ -209,7 +209,7 @@ export function downloadShiftPdf(shift, records, color, comparisonRecords, obser
   pdf.setTextColor(35, 49, 64); pdf.setFontSize(10); pdf.setFont('helvetica', 'bold'); pdf.text(`Período: ${period}`, 14, 43)
   pdf.setDrawColor(...rgb); pdf.setLineWidth(.7); pdf.line(14, 49, 196, 49)
 
-  pdf.setFontSize(11); pdf.text('RESUMEN DEL TURNO', 14, 59)
+  pdf.setFontSize(11); pdf.text('RESUMEN DE AUDITORÍA MÓVILES', 14, 59)
   const cards = [
     { label: 'ALERTAS DEL SISTEMA', value: format.format(totals.systemAlerts), x: 14, y: 65, width: 44 },
     { label: 'ALERTAS AUDITADAS', value: format.format(totals.auditedAlerts), x: 60, y: 65, width: 44 },
