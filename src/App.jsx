@@ -10,6 +10,7 @@ const TURN_COLORS = { A: '#7030A0', B: '#274E13', C: '#FF0000', D: '#1155CC', E:
 const TURN_FOREGROUNDS = { A: '#FFFFFF', B: '#FFFFFF', C: '#FFFFFF', D: '#FFFFFF', E: '#064C55', F: '#FFFFFF' }
 const TURN_INKS = { A: '#7030A0', B: '#274E13', C: '#D00000', D: '#1155CC', E: '#087B83', F: '#C000A9' }
 const format = new Intl.NumberFormat('es-AR')
+// Los datos del Excel se solicitan en cada carga para mostrar la última semana publicada.
 
 const totalsOf = (records) => {
   const systemAlerts = records.reduce((sum, record) => sum + record.systemAlerts, 0)
