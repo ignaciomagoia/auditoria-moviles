@@ -16,4 +16,19 @@ export const mobileAuditSummaries = [
       { shift: 'F', letters: 494, unassigned: 489, assigned: 5 },
     ],
   },
+  {
+    week: '12/10 – 18/10',
+    month: 'Octubre',
+    year: 2026,
+    startDate: '2026-10-12',
+    endDate: '2026-10-18',
+    shifts: [
+      { shift: 'A', letters: 231, unassigned: 75, assigned: 156 },
+      { shift: 'B', letters: 291, unassigned: 92, assigned: 199 },
+      { shift: 'C', letters: 331, unassigned: 143, assigned: 188 },
+      { shift: 'D', letters: 516, unassigned: 508, assigned: 8 },
+      { shift: 'E', letters: 383, unassigned: 168, assigned: 215 },
+      { shift: 'F', letters: 359, unassigned: 359, assigned: 0 },
+    ],
+  },
 ]
