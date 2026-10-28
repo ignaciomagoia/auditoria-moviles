@@ -28,6 +28,14 @@ const drawCard = (pdf, { x, y, label, value, color }) => {
   pdf.text(value, x + 6, y + 34)
 }
 
+const drawAverageCard = (pdf, { value, color }) => {
+  pdf.setFillColor(250, 252, 253); pdf.roundedRect(14, 187, 182, 32, 3, 3, 'F')
+  pdf.setDrawColor(222, 231, 237); pdf.setLineWidth(.35); pdf.roundedRect(14, 187, 182, 32, 3, 3, 'S')
+  pdf.setFillColor(...color); pdf.roundedRect(14, 187, 182, 4, 2.7, 2.7, 'F')
+  pdf.setTextColor(91, 112, 130); pdf.setFontSize(8); pdf.setFont('helvetica', 'bold'); pdf.text('PROMEDIO DESPACHO - ARRIBO', 20, 201)
+  pdf.setTextColor(29, 51, 73); pdf.setFontSize(18); pdf.setFont('helvetica', 'bold'); pdf.text(value, 20, 213)
+}
+
 export function downloadTwoDayResourcePdf(period, data) {
   const pdf = new jsPDF({ unit: 'mm', format: 'a4' })
   const color = hexToRgb(TURN_COLORS[data.shift])
@@ -42,12 +50,21 @@ export function downloadTwoDayResourcePdf(period, data) {
   pdf.setFontSize(12); pdf.text('RECURSOS ASIGNADOS', 14, 64)
 
   const cards = [
-    { label: 'TOTAL EVENTOS', value: format.format(data.totalEvents), x: 14, y: 72 },
-    { label: 'RECURSOS ASIGNADOS', value: format.format(data.assignedResources), x: 112, y: 72 },
-    { label: 'SIN ASIGNAR', value: format.format(data.unassignedResources), x: 14, y: 126 },
-    { label: 'CUMPLIMIENTO', value: `${percentFormat.format(compliance)}%`, x: 112, y: 126 },
+    { label: 'TOTAL DE EVENTOS', value: format.format(data.totalEvents), x: 14, y: 72 },
+    { label: 'TOTAL DE MÓVILES ASIGNADOS', value: format.format(data.assignedResources), x: 112, y: 72 },
+    { label: 'TOTAL DE MÓVILES SIN ASIGNAR', value: format.format(data.unassignedResources), x: 14, y: 126 },
+    { label: 'PORCENTAJE DE ASIGNACIÓN', value: `${percentFormat.format(compliance)}%`, x: 112, y: 126 },
   ]
   cards.forEach((card) => drawCard(pdf, { ...card, color }))
+  drawAverageCard(pdf, { value: period.averageDispatchArrival || '—', color })
+  pdf.setTextColor(35, 49, 64); pdf.setFontSize(11); pdf.setFont('helvetica', 'bold'); pdf.text('DISTRIBUCIÓN', 14, 234)
+  pdf.setTextColor(55, 75, 92); pdf.setFontSize(9); pdf.setFont('helvetica', 'normal')
+  const distribution = period.arrivalDistribution || []
+  distribution.forEach((item, index) => {
+    const y = 244 + index * 7
+    pdf.setFillColor(...color); pdf.circle(17, y - 1.1, 1, 'F')
+    pdf.text(item, 22, y)
+  })
 
   pdf.setTextColor(110, 128, 144); pdf.setFontSize(8); pdf.setFont('helvetica', 'normal')
   pdf.text(`Informe de recursos · Turno ${data.shift}`, 14, 289)

@@ -65,9 +65,10 @@ function TwoDayResourceReports() {
       const compliance = calculateCompliance(item)
       return <article className="resource-report-card" style={{ '--turn-color': TURN_COLORS[item.shift], '--turn-foreground': TURN_FOREGROUNDS[item.shift], '--turn-ink': TURN_INKS[item.shift] }} key={item.shift}>
         <header><span className="shift-tag">{item.shift}</span><div><h3>Turno {item.shift}</h3><p>Recurso asignado</p></div><button className="turn-pdf" onClick={() => downloadTwoDayResourcePdf(period, item)}><Download size={15} /> Descargar PDF</button></header>
-        <dl><div><dt>Total eventos</dt><dd>{format.format(item.totalEvents)}</dd></div><div><dt>Asignados</dt><dd>{format.format(item.assignedResources)}</dd></div><div><dt>Sin asignar</dt><dd>{format.format(item.unassignedResources)}</dd></div><div><dt>Cumplimiento</dt><dd>{compliance.toFixed(1)}%</dd></div></dl>
+        <dl><div><dt>Total de eventos</dt><dd>{format.format(item.totalEvents)}</dd></div><div><dt>Total de móviles asignados</dt><dd>{format.format(item.assignedResources)}</dd></div><div><dt>Total de móviles sin asignar</dt><dd>{format.format(item.unassignedResources)}</dd></div><div><dt>Porcentaje de asignación</dt><dd>{compliance.toFixed(1)}%</dd></div></dl>
       </article>
     })}</div>
+    <section className="resource-period-insights" aria-label="Indicadores generales de la franja"><article className="average-dispatch"><span>Promedio despacho - arribo</span><strong>{period.averageDispatchArrival}</strong></article><div className="arrival-distribution"><h3>Distribución</h3><ul>{period.arrivalDistribution.map((item) => <li key={item}>{item}</li>)}</ul></div></section>
   </section>
 }
 
