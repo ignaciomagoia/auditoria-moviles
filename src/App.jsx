@@ -68,7 +68,6 @@ function TwoDayResourceReports() {
         <dl><div><dt>Total de eventos</dt><dd>{format.format(item.totalEvents)}</dd></div><div><dt>Total de móviles asignados</dt><dd>{format.format(item.assignedResources)}</dd></div><div><dt>Total de móviles sin asignar</dt><dd>{format.format(item.unassignedResources)}</dd></div><div><dt>Porcentaje de asignación</dt><dd>{compliance.toFixed(1)}%</dd></div></dl>
       </article>
     })}</div>
-    <section className="resource-period-insights" aria-label="Indicadores generales de la franja"><article className="average-dispatch"><span>Promedio despacho - arribo</span><strong>{period.averageDispatchArrival}</strong></article><div className="arrival-distribution"><h3>Distribución</h3><ul>{period.arrivalDistribution.map((item) => <li key={item}>{item}</li>)}</ul></div></section>
   </section>
 }
 

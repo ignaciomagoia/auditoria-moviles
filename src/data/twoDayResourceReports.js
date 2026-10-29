@@ -5,12 +5,6 @@ export const twoDayResourceReports = [
     label: '25/10 – 26/10',
     startDate: '2026-10-25',
     endDate: '2026-10-26',
-    averageDispatchArrival: '00:06:34',
-    arrivalDistribution: [
-      '47% de los móviles llegaron en menos de 5 min',
-      '44% llegaron entre 5 y 10 min',
-      '9% tardaron más de 10 min',
-    ],
     shifts: [
       { shift: 'B', totalEvents: 178, assignedResources: 130, unassignedResources: 40 },
       { shift: 'D', totalEvents: 307, assignedResources: 55, unassignedResources: 252 },
