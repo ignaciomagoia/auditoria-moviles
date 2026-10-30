@@ -16,6 +16,14 @@ const formatDate = (date) => {
 
 export const calculateCompliance = ({ totalEvents, assignedResources }) => totalEvents ? assignedResources / totalEvents * 100 : 0
 
+export const formatReportPeriod = ({ startDate, endDate }) => {
+  const start = Date.parse(`${startDate}T00:00:00Z`)
+  const end = Date.parse(`${endDate}T00:00:00Z`)
+  const daysBetween = Math.round((end - start) / 86_400_000)
+  const separator = daysBetween === 1 ? 'y' : 'al'
+  return `${formatDate(startDate)} ${separator} ${formatDate(endDate)}`
+}
+
 const drawCard = (pdf, { x, y, label, value, color }) => {
   const width = 84
   const height = 44
@@ -37,7 +45,7 @@ export function downloadTwoDayResourcePdf(period, data) {
   pdf.setTextColor(255, 255, 255); pdf.setFontSize(19); pdf.setFont('helvetica', 'bold'); pdf.text('INFORME', 14, 14)
   pdf.setFontSize(9); pdf.setFont('helvetica', 'normal'); pdf.text(`Turno ${data.shift} · Recurso asignado`, 14, 22)
   pdf.setTextColor(35, 49, 64); pdf.setFontSize(10); pdf.setFont('helvetica', 'bold')
-  pdf.text(`Período: ${formatDate(period.startDate)} y ${formatDate(period.endDate)}`, 14, 45)
+  pdf.text(`Período: ${formatReportPeriod(period)}`, 14, 45)
   pdf.setDrawColor(...color); pdf.setLineWidth(.7); pdf.line(14, 51, 196, 51)
   pdf.setFontSize(12); pdf.text('RECURSOS ASIGNADOS', 14, 64)
 
