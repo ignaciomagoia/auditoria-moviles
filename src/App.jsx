@@ -5,6 +5,7 @@ import { excludeReplacedDailyRecords, parseWorkbook } from './lib/excel'
 import { downloadShiftPdf } from './lib/report'
 import { mobileAuditSummaries } from './data/mobileAuditSummaries.js'
 import { twoDayResourceReports } from './data/twoDayResourceReports.js'
+import { resourceOperatorsByPeriod } from './data/resourceOperators.js'
 import { calculateCompliance, downloadTwoDayResourcePdf } from './lib/twoDayResourceReport.js'
 
 const TURNOS = ['A', 'B', 'C', 'D', 'E', 'F']
@@ -56,20 +57,76 @@ function MobileAuditSummary({ filters }) {
 
 function TwoDayResourceReports() {
   const [periodId, setPeriodId] = useState(twoDayResourceReports[0]?.id ?? '')
+  const [zone, setZone] = useState('')
+  const [operatorName, setOperatorName] = useState('')
   const period = twoDayResourceReports.find((item) => item.id === periodId)
   if (!period) return null
+  const operators = resourceOperatorsByPeriod[period.id] ?? []
+  const selectedOperator = operators.find((item) => item.name === operatorName)
+  const shifts = operators.length ? TURNOS.map((shift) => operators.filter((item) => item.shift === shift).reduce((total, item) => ({
+    shift,
+    totalEvents: total.totalEvents + item.totalEvents,
+    assignedResources: total.assignedResources + item.assignedResources,
+    unassignedResources: total.unassignedResources + item.unassignedResources,
+  }), { shift, totalEvents: 0, assignedResources: 0, unassignedResources: 0 })) : period.shifts
+  const selectPeriod = (event) => { setPeriodId(event.target.value); setZone(''); setOperatorName('') }
+  const selectZone = (event) => { setZone(event.target.value); setOperatorName('') }
+  const selectOperator = (event) => { setOperatorName(event.target.value); setZone('') }
+  const cards = selectedOperator ? [selectedOperator] : shifts
 
   return <section className="two-day-reports" aria-label="Informes de recursos">
-    <div className="summary-heading resource-report-heading"><div><p className="eyebrow">Control operativo</p><h2>Informes de recursos</h2><p>Seleccione una franja para consultar y descargar el informe de cada turno.</p></div><label>Franja de fechas<select value={periodId} onChange={(event) => setPeriodId(event.target.value)}>{twoDayResourceReports.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label></div>
-    <div className="resource-report-grid">{period.shifts.map((item) => {
+    <div className="summary-heading resource-report-heading"><div><p className="eyebrow">Control operativo</p><h2>Informes de recursos</h2><p>Seleccione una franja para consultar y descargar el informe de cada turno u operador.</p></div><div className="resource-report-selects"><label>Franja de fechas<select value={periodId} onChange={selectPeriod}>{twoDayResourceReports.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>{period.zoneBreakdown && <label>Zona<select value={zone} onChange={selectZone}><option value="">Todas las zonas</option>{['Norte', 'Sur', 'Este', 'Centro/Oeste'].map((item) => <option key={item} value={item}>{item}</option>)}</select></label>}{operators.length > 0 && <label className="resource-operator-picker">Ver por operador<select value={operatorName} onChange={selectOperator}><option value="">Seleccionar operador</option>{operators.map((item) => <option key={item.name} value={item.name}>{item.name} · Turno {item.shift}</option>)}</select></label>}</div></div>
+    <div className="resource-report-grid">{cards.map((original) => {
+      const zoneData = zone ? period.zoneBreakdown?.[original.shift]?.[zone] : null
+      const item = zoneData ? { ...original, ...zoneData } : original
       const compliance = calculateCompliance(item)
       return <article className="resource-report-card" style={{ '--turn-color': TURN_COLORS[item.shift], '--turn-foreground': TURN_FOREGROUNDS[item.shift], '--turn-ink': TURN_INKS[item.shift] }} key={item.shift}>
-        <header><span className="shift-tag">{item.shift}</span><div><h3>Turno {item.shift}</h3><p>Recurso asignado</p></div><button className="turn-pdf" onClick={() => downloadTwoDayResourcePdf(period, item)}><Download size={15} /> Descargar PDF</button></header>
+        <header><span className="shift-tag">{item.shift}</span><div><h3>{selectedOperator ? item.name : `Turno ${item.shift}`}</h3><p>{selectedOperator ? `Turno ${item.shift} · Recurso asignado` : zone ? `Zona ${zone}` : 'Recurso asignado'}</p></div><button className="turn-pdf" onClick={() => downloadTwoDayResourcePdf(period, item, zone, selectedOperator?.name)}><Download size={15} /> Descargar PDF</button></header>
         <dl><div><dt>Total de eventos</dt><dd>{format.format(item.totalEvents)}</dd></div><div><dt>Total de móviles asignados</dt><dd>{format.format(item.assignedResources)}</dd></div><div><dt>Total de móviles sin asignar</dt><dd>{format.format(item.unassignedResources)}</dd></div><div><dt>Porcentaje de asignación</dt><dd>{compliance.toFixed(1)}%</dd></div></dl>
       </article>
     })}</div>
+    {zone && period.zoneBreakdownNote && <p className="resource-zone-note">{period.zoneBreakdownNote}</p>}
   </section>
 }
+
+/* La vista de asignaciÃ³n independiente fue integrada en Informes de recursos.
+function AssignmentAnalysis() {
+  const [analysisId, setAnalysisId] = useState(assignmentAnalyses[0]?.id ?? '')
+  const [operatorName, setOperatorName] = useState('')
+  const [zoneName, setZoneName] = useState('')
+  const analysis = assignmentAnalyses.find((item) => item.id === analysisId)
+  if (!analysis) return null
+  const operator = analysis.operators.find((item) => item.name === operatorName)
+  const zone = analysis.zones.find((item) => item.name === zoneName)
+  const kind = operator ? 'operator' : zone ? 'zone' : null
+  const target = operator || zone
+  const percentages = target ? calculateAssignmentPercentages(target) : null
+  const metrics = !target ? [] : zone ? [
+    { label: 'Total eventos de todas las zonas', value: analysis.totalZoneEvents },
+    { label: 'Total eventos de esta zona', value: target.total },
+    { label: 'Recursos asignados', value: target.assigned },
+    { label: 'Recursos sin asignar', value: target.unassigned },
+    { label: 'Porcentaje de asignación', value: `${percentages.assigned.toFixed(1)}%` },
+    { label: 'Porcentaje sin asignar', value: `${percentages.unassigned.toFixed(1)}%` },
+  ] : [
+    { label: 'Total de eventos', value: target.total },
+    { label: 'Recursos asignados', value: target.assigned },
+    { label: 'Recursos sin asignar', value: target.unassigned },
+    { label: 'Porcentaje de asignación', value: `${percentages.assigned.toFixed(1)}%` },
+    { label: 'Porcentaje sin asignar', value: `${percentages.unassigned.toFixed(1)}%` },
+  ]
+  const choosePeriod = (event) => { setAnalysisId(event.target.value); setOperatorName(''); setZoneName('') }
+  const chooseOperator = (event) => { setOperatorName(event.target.value); setZoneName('') }
+  const chooseZone = (event) => { setZoneName(event.target.value); setOperatorName('') }
+
+  return <section className="assignment-analysis" aria-label="Asignación por operador y zona">
+    <div className="summary-heading"><div><p className="eyebrow">Asignación de recursos</p><h2>Asignación por operador y zona</h2><p>Las celdas sin tiempo de despacho-arribo se contabilizan como recursos sin asignar.</p></div></div>
+    <label className="assignment-period-picker">Franja de análisis<select value={analysisId} onChange={choosePeriod}>{assignmentAnalyses.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+    <div className="assignment-controls"><label>Ver por operador<select value={operatorName} onChange={chooseOperator}><option value="">Seleccionar operador</option>{analysis.operators.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}</select></label><span>o</span><label>Ver por zona<select value={zoneName} onChange={chooseZone}><option value="">Seleccionar zona</option>{analysis.zones.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}</select></label></div>
+    {target ? <article className="assignment-detail"><header><div><p className="eyebrow">{kind === 'operator' ? 'Operador seleccionado' : 'Zona seleccionada'}</p><h3>{target.name}</h3>{zone && <p className="assignment-quadrants">Área: {zone.area} · {zone.neighborhoods} barrios incluidos</p>}</div><button className="primary" onClick={() => downloadAssignmentAnalysisPdf({ kind, name: target.name, period: analysis.period, stats: target, area: zone?.area, neighborhoods: zone?.neighborhoods, allZoneTotal: analysis.totalZoneEvents })}><Download size={16} /> Descargar PDF</button></header><dl>{metrics.map((metric) => <div key={metric.label}><dt>{metric.label}</dt><dd>{typeof metric.value === 'number' ? format.format(metric.value) : metric.value}</dd></div>)}</dl>{zone && analysis.recordsWithoutZone > 0 && <p className="assignment-note">{analysis.recordsWithoutZone} registros sin cuadrícula no se incluyen en el total por zona.</p>}</article> : <p className="summary-empty">Seleccione un operador o una zona para ver el detalle de asignación.</p>}
+  </section>
+}
+*/
 
 function ShiftBlocks({ records, onRequestPdf }) {
   return <section className="shift-list" aria-label="Resultados por turno">

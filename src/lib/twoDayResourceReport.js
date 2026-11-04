@@ -36,7 +36,18 @@ const drawCard = (pdf, { x, y, label, value, color }) => {
   pdf.text(value, x + 6, y + 34)
 }
 
-export function downloadTwoDayResourcePdf(period, data) {
+const drawZoneCard = (pdf, { x, y, width, label, value, color }) => {
+  const height = 31
+  pdf.setFillColor(250, 252, 253); pdf.roundedRect(x, y, width, height, 3, 3, 'F')
+  pdf.setDrawColor(222, 231, 237); pdf.setLineWidth(.35); pdf.roundedRect(x, y, width, height, 3, 3, 'S')
+  pdf.setFillColor(...color); pdf.roundedRect(x, y, width, 3.5, 2.7, 2.7, 'F')
+  pdf.setTextColor(91, 112, 130); pdf.setFontSize(5.8); pdf.setFont('helvetica', 'bold')
+  pdf.text(pdf.splitTextToSize(label.toUpperCase(), width - 10), x + 5, y + 11)
+  pdf.setTextColor(29, 51, 73); pdf.setFontSize(16); pdf.setFont('helvetica', 'bold')
+  pdf.text(value, x + 5, y + 26)
+}
+
+export function downloadTwoDayResourcePdf(period, data, zone = '', operatorName = '') {
   const pdf = new jsPDF({ unit: 'mm', format: 'a4' })
   const color = hexToRgb(TURN_COLORS[data.shift])
   const compliance = calculateCompliance(data)
@@ -44,6 +55,8 @@ export function downloadTwoDayResourcePdf(period, data) {
   pdf.setFillColor(...color); pdf.rect(0, 0, 210, 32, 'F')
   pdf.setTextColor(255, 255, 255); pdf.setFontSize(19); pdf.setFont('helvetica', 'bold'); pdf.text('INFORME', 14, 14)
   pdf.setFontSize(9); pdf.setFont('helvetica', 'normal'); pdf.text(`Turno ${data.shift} · Recurso asignado`, 14, 22)
+  if (operatorName) { pdf.setTextColor(255, 255, 255); pdf.setFontSize(8); pdf.setFont('helvetica', 'normal'); pdf.text(`Operador: ${operatorName}`, 14, 28) }
+  if (zone) { pdf.setTextColor(255, 255, 255); pdf.setFontSize(8); pdf.setFont('helvetica', 'normal'); pdf.text(`Zona ${zone}`, 14, 28) }
   pdf.setTextColor(35, 49, 64); pdf.setFontSize(10); pdf.setFont('helvetica', 'bold')
   pdf.text(`Período: ${formatReportPeriod(period)}`, 14, 45)
   pdf.setDrawColor(...color); pdf.setLineWidth(.7); pdf.line(14, 51, 196, 51)
@@ -57,8 +70,35 @@ export function downloadTwoDayResourcePdf(period, data) {
   ]
   cards.forEach((card) => drawCard(pdf, { ...card, color }))
 
+  const zoneBreakdown = !zone && !operatorName ? period.zoneBreakdown?.[data.shift] : null
+  if (zoneBreakdown) {
+    const zones = ['Norte', 'Sur', 'Este', 'Centro/Oeste']
+    const zonedUnassigned = zones.reduce((sum, item) => sum + (zoneBreakdown[item]?.unassignedResources ?? 0), 0)
+    const withoutZone = data.unassignedResources - zonedUnassigned
+
+    pdf.setTextColor(35, 49, 64); pdf.setFontSize(11); pdf.setFont('helvetica', 'bold')
+    pdf.text('M\u00d3VILES SIN ASIGNAR POR CUADRANTE', 14, 188)
+    const zoneCards = [
+      ...zones.map((item) => ({ label: item, value: zoneBreakdown[item]?.unassignedResources ?? 0 })),
+      { label: 'Fuera de cuadrante', value: withoutZone },
+    ]
+    const positions = [
+      { x: 14, y: 196 }, { x: 77, y: 196 }, { x: 140, y: 196 },
+      { x: 45.5, y: 235 }, { x: 108.5, y: 235 },
+    ]
+    zoneCards.forEach((item, index) => drawZoneCard(pdf, {
+      ...positions[index],
+      width: 56,
+      label: item.label,
+      value: format.format(item.value),
+      color,
+    }))
+  }
+
   pdf.setTextColor(110, 128, 144); pdf.setFontSize(8); pdf.setFont('helvetica', 'normal')
   pdf.text(`Informe de recursos · Turno ${data.shift}`, 14, 289)
   pdf.text('Página 1 de 1', 176, 289)
-  pdf.save(`informe-recursos-turno-${data.shift.toLowerCase()}-${period.startDate}_${period.endDate}.pdf`)
+  const zoneFileName = zone ? `-zona-${zone.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : ''
+  const subjectFileName = operatorName ? `operador-${operatorName.replace(/[^a-z0-9]+/gi, '-')}` : `turno-${data.shift.toLowerCase()}`
+  pdf.save(`informe-recursos-${subjectFileName}${zoneFileName}-${period.startDate}_${period.endDate}.pdf`)
 }
