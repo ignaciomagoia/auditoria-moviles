@@ -1,10 +1,37 @@
 const operator = (name, shift, totalEvents, assignedResources) => ({
+  id: `${name}|${shift}`,
   name,
   shift,
   totalEvents,
   assignedResources,
   unassignedResources: totalEvents - assignedResources,
 })
+
+const correctedNovemberOperators = [
+  ['agostina.cabral', 'E', 7, 6], ['agustin.lazarte', 'D', 2, 1], ['agustin.lazarte', 'F', 19, 7],
+  ['alan.olivero', 'F', 11, 5], ['alexander.montaño', 'E', 17, 13], ['alexander.montaño', 'F', 10, 6],
+  ['altamirano.joaquin', 'B', 4, 3], ['ana.gomez', 'B', 2, 2], ['ana.gomez', 'D', 65, 30],
+  ['antonella.carollo', 'B', 1, 0], ['antonella.correa', 'F', 2, 2], ['antonella.cueva', 'D', 7, 1],
+  ['antonella.cueva', 'F', 2, 0], ['antonella.difrancesca', 'D', 1, 1], ['carolina.rosso', 'D', 21, 9],
+  ['celeste.suarez', 'B', 15, 12], ['cintia.ramos', 'B', 1, 1], ['cintia.ramos', 'D', 29, 18],
+  ['cintia.ramos', 'F', 1, 1], ['dahyana.zamorano', 'D', 1, 0], ['daniela.gonzalez', 'E', 9, 6],
+  ['david.bosio', 'F', 10, 6], ['delfina.paz', 'B', 19, 17], ['estefania.ybañez', 'B', 31, 23],
+  ['fabricio.cabral', 'B', 33, 19], ['facundo.barrionuevo', 'E', 9, 6], ['hernan.fuentes', 'B', 11, 9],
+  ['ignacio.marino', 'D', 28, 9], ['ignacio.marino', 'F', 1, 1], ['isabel.leiva', 'D', 1, 1],
+  ['isabel.leiva', 'F', 4, 1], ['ismael.zamuz', 'B', 3, 3], ['ismael.zamuz', 'D', 37, 24],
+  ['jazmin.ramirez', 'B', 21, 20], ['jesica.lopez', 'D', 2, 0], ['jesica.lopez', 'F', 10, 6],
+  ['josue.chazarreta', 'B', 2, 1], ['juan.esquibel', 'B', 9, 7], ['julieta.reynoso', 'B', 2, 1],
+  ['julieta.reynoso', 'E', 1, 0], ['lara.escudero', 'D', 1, 0], ['lucia.romero', 'B', 15, 9],
+  ['luciana.antunez', 'E', 10, 8], ['luisiana.unamuno', 'B', 8, 5], ['malena.rosa', 'D', 39, 14],
+  ['martina.guzman', 'D', 34, 21], ['martina.guzman', 'F', 1, 1], ['martina.torres', 'D', 1, 0],
+  ['martina.torres', 'F', 34, 14], ['mateo.acosta', 'D', 30, 11], ['mateo.acosta', 'F', 1, 0],
+  ['melania.moyano', 'E', 8, 8], ['milagros.oviedo', 'E', 3, 2], ['nahuel.ribaudo', 'F', 15, 12],
+  ['nancy.farias', 'E', 9, 9], ['nicolas.gonzalez', 'E', 1, 1], ['nicolas.uliarte', 'B', 3, 1],
+  ['pamela.gigena', 'D', 4, 2], ['paula.podboraczynski', 'E', 7, 2], ['rocio.fuentecilla', 'D', 8, 3],
+  ['rocio.fuentecilla', 'F', 22, 12], ['santiago.repiso', 'F', 1, 0], ['tomas.fernandez', 'F', 1, 1],
+  ['virginia.herrera', 'F', 5, 3], ['wanda.peralta', 'B', 24, 19], ['wilda.ponce', 'B', 3, 0],
+  ['wilda.ponce', 'D', 46, 29], ['yamila.vega', 'E', 7, 5],
+].map(([name, shift, totalEvents, assignedResources]) => operator(name, shift, totalEvents, assignedResources))
 
 // Operadores consolidados desde ASIGANCION 25 Y 26.csv y asociados a la nómina por turno.
 export const resourceOperatorsByPeriod = {
@@ -64,3 +91,5 @@ export const resourceOperatorsByPeriod = {
     operator('yamila.vega', 'E', 25, 9), operator('yesica.varela', 'E', 3, 2),
   ],
 }
+
+resourceOperatorsByPeriod['2026-11-02_2026-11-03'] = correctedNovemberOperators

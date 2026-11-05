@@ -36,15 +36,14 @@ const drawCard = (pdf, { x, y, label, value, color }) => {
   pdf.text(value, x + 6, y + 34)
 }
 
-const drawZoneCard = (pdf, { x, y, width, label, value, color }) => {
-  const height = 31
+const drawZoneCard = (pdf, { x, y, width, height = 31, label, value, color }) => {
   pdf.setFillColor(250, 252, 253); pdf.roundedRect(x, y, width, height, 3, 3, 'F')
   pdf.setDrawColor(222, 231, 237); pdf.setLineWidth(.35); pdf.roundedRect(x, y, width, height, 3, 3, 'S')
   pdf.setFillColor(...color); pdf.roundedRect(x, y, width, 3.5, 2.7, 2.7, 'F')
   pdf.setTextColor(91, 112, 130); pdf.setFontSize(5.8); pdf.setFont('helvetica', 'bold')
-  pdf.text(pdf.splitTextToSize(label.toUpperCase(), width - 10), x + 5, y + 11)
+  pdf.text(pdf.splitTextToSize(label.toUpperCase(), width - 10), x + 5, y + 10)
   pdf.setTextColor(29, 51, 73); pdf.setFontSize(16); pdf.setFont('helvetica', 'bold')
-  pdf.text(value, x + 5, y + 26)
+  pdf.text(value, x + 5, y + height - 5)
 }
 
 export function downloadTwoDayResourcePdf(period, data, zone = '', operatorName = '') {
@@ -72,23 +71,23 @@ export function downloadTwoDayResourcePdf(period, data, zone = '', operatorName 
 
   const zoneBreakdown = !zone && !operatorName ? period.zoneBreakdown?.[data.shift] : null
   if (zoneBreakdown) {
-    const zones = ['Norte', 'Sur', 'Este', 'Centro/Oeste']
-    const zonedUnassigned = zones.reduce((sum, item) => sum + (zoneBreakdown[item]?.unassignedResources ?? 0), 0)
-    const withoutZone = data.unassignedResources - zonedUnassigned
+    const zones = period.zoneNames ?? ['Norte', 'Sur', 'Este', 'Centro/Oeste']
+    const zoneCards = zones.map((item) => ({ label: item, value: zoneBreakdown[item]?.unassignedResources ?? 0 }))
+    if (!zones.includes('Fuera de cuadrante')) {
+      const zonedUnassigned = zones.reduce((sum, item) => sum + (zoneBreakdown[item]?.unassignedResources ?? 0), 0)
+      zoneCards.push({ label: 'Fuera de cuadrante', value: data.unassignedResources - zonedUnassigned })
+    }
 
     pdf.setTextColor(35, 49, 64); pdf.setFontSize(11); pdf.setFont('helvetica', 'bold')
-    pdf.text('M\u00d3VILES SIN ASIGNAR POR CUADRANTE', 14, 188)
-    const zoneCards = [
-      ...zones.map((item) => ({ label: item, value: zoneBreakdown[item]?.unassignedResources ?? 0 })),
-      { label: 'Fuera de cuadrante', value: withoutZone },
-    ]
-    const positions = [
-      { x: 14, y: 196 }, { x: 77, y: 196 }, { x: 140, y: 196 },
-      { x: 45.5, y: 235 }, { x: 108.5, y: 235 },
-    ]
+    pdf.text(period.zoneSectionTitle ?? 'M\u00d3VILES SIN ASIGNAR POR CUADRANTE', 14, 188)
+    const compactLayout = zoneCards.length > 5
+    const positions = compactLayout
+      ? zoneCards.map((_, index) => ({ x: 14 + (index % 5) * 36.9, y: 196 + Math.floor(index / 5) * 31 }))
+      : [{ x: 14, y: 196 }, { x: 77, y: 196 }, { x: 140, y: 196 }, { x: 45.5, y: 235 }, { x: 108.5, y: 235 }]
     zoneCards.forEach((item, index) => drawZoneCard(pdf, {
       ...positions[index],
-      width: 56,
+      width: compactLayout ? 34.4 : 56,
+      height: compactLayout ? 25 : 31,
       label: item.label,
       value: format.format(item.value),
       color,

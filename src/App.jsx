@@ -62,7 +62,8 @@ function TwoDayResourceReports() {
   const period = twoDayResourceReports.find((item) => item.id === periodId)
   if (!period) return null
   const operators = resourceOperatorsByPeriod[period.id] ?? []
-  const selectedOperator = operators.find((item) => item.name === operatorName)
+  const zoneNames = period.zoneNames ?? ['Norte', 'Sur', 'Este', 'Centro/Oeste']
+  const selectedOperator = operators.find((item) => item.id === operatorName)
   const shifts = operators.length ? TURNOS.map((shift) => operators.filter((item) => item.shift === shift).reduce((total, item) => ({
     shift,
     totalEvents: total.totalEvents + item.totalEvents,
@@ -75,7 +76,7 @@ function TwoDayResourceReports() {
   const cards = selectedOperator ? [selectedOperator] : shifts
 
   return <section className="two-day-reports" aria-label="Informes de recursos">
-    <div className="summary-heading resource-report-heading"><div><p className="eyebrow">Control operativo</p><h2>Informes de recursos</h2><p>Seleccione una franja para consultar y descargar el informe de cada turno u operador.</p></div><div className="resource-report-selects"><label>Franja de fechas<select value={periodId} onChange={selectPeriod}>{twoDayResourceReports.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>{period.zoneBreakdown && <label>Zona<select value={zone} onChange={selectZone}><option value="">Todas las zonas</option>{['Norte', 'Sur', 'Este', 'Centro/Oeste'].map((item) => <option key={item} value={item}>{item}</option>)}</select></label>}{operators.length > 0 && <label className="resource-operator-picker">Ver por operador<select value={operatorName} onChange={selectOperator}><option value="">Seleccionar operador</option>{operators.map((item) => <option key={item.name} value={item.name}>{item.name} · Turno {item.shift}</option>)}</select></label>}</div></div>
+    <div className="summary-heading resource-report-heading"><div><p className="eyebrow">Control operativo</p><h2>Informes de recursos</h2><p>Seleccione una franja para consultar y descargar el informe de cada turno u operador.</p></div><div className="resource-report-selects"><label>Franja de fechas<select value={periodId} onChange={selectPeriod}>{twoDayResourceReports.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>{period.zoneBreakdown && <label>Zona<select value={zone} onChange={selectZone}><option value="">Todas las zonas</option>{zoneNames.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>}{operators.length > 0 && <label className="resource-operator-picker">Ver por operador<select value={operatorName} onChange={selectOperator}><option value="">Seleccionar operador</option>{operators.map((item) => <option key={item.id} value={item.id}>{item.name} · Turno {item.shift}</option>)}</select></label>}</div></div>
     <div className="resource-report-grid">{cards.map((original) => {
       const zoneData = zone ? period.zoneBreakdown?.[original.shift]?.[zone] : null
       const item = zoneData ? { ...original, ...zoneData } : original
