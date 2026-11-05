@@ -72,7 +72,9 @@ export function downloadTwoDayResourcePdf(period, data, zone = '', operatorName 
   const zoneBreakdown = !zone && !operatorName ? period.zoneBreakdown?.[data.shift] : null
   if (zoneBreakdown) {
     const zones = period.zoneNames ?? ['Norte', 'Sur', 'Este', 'Centro/Oeste']
-    const zoneCards = zones.map((item) => ({ label: item, value: zoneBreakdown[item]?.unassignedResources ?? 0 }))
+    const zoneCards = zones
+      .map((item) => ({ label: item, value: zoneBreakdown[item]?.unassignedResources ?? 0 }))
+      .filter((item) => item.label !== 'Distrito sin asociar' || item.value > 0)
     if (!zones.includes('Fuera de cuadrante')) {
       const zonedUnassigned = zones.reduce((sum, item) => sum + (zoneBreakdown[item]?.unassignedResources ?? 0), 0)
       zoneCards.push({ label: 'Fuera de cuadrante', value: data.unassignedResources - zonedUnassigned })
