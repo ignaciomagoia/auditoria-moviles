@@ -1,3 +1,4 @@
+/* Archivo temporal de operadores de períodos anteriores, sin publicar.
 const operator = (name, shift, totalEvents, assignedResources) => ({
   id: `${name}|${shift}`,
   name,
@@ -93,3 +94,52 @@ export const resourceOperatorsByPeriod = {
 }
 
 resourceOperatorsByPeriod['2026-11-02_2026-11-03'] = correctedNovemberOperators
+*/
+
+const operator = (name, shift, totalEvents, correctlyAssignedResources, incorrectlyAssignedResources, unassignedResources) => ({
+  id: `${name}|${shift}`,
+  name,
+  shift,
+  totalEvents,
+  correctlyAssignedResources,
+  incorrectlyAssignedResources,
+  unassignedResources,
+})
+
+const november14And15Operators = [
+  ['altamirano.joaquin', 'B', 1, 1, 0, 0], ['ana.gomez', 'B', 2, 1, 1, 0], ['antonella.correa', 'B', 1, 0, 0, 1],
+  ['celeste.suarez', 'B', 10, 7, 2, 1], ['delfina.paz', 'B', 6, 3, 1, 2], ['estefania.ybañez', 'B', 10, 5, 4, 1],
+  ['fabricio.cabral', 'B', 52, 39, 13, 0], ['hernan.fuentes', 'B', 13, 8, 4, 1], ['ismael.farias', 'B', 5, 4, 1, 0],
+  ['ismael.zamuz', 'B', 1, 1, 0, 0], ['julieta.reynoso', 'B', 7, 1, 1, 5], ['julieta.rivarola', 'B', 13, 12, 1, 0],
+  ['leonela.jaime', 'B', 11, 9, 2, 0], ['lorena.soria', 'B', 13, 8, 4, 1], ['lucia.romero', 'B', 1, 1, 0, 0],
+  ['luisiana.unamuno', 'B', 20, 15, 3, 2], ['luz.nieto', 'B', 12, 12, 0, 0], ['macarena.basualdo', 'B', 3, 1, 0, 2],
+  ['mateo.acosta', 'B', 2, 2, 0, 0], ['mayco.patino', 'B', 1, 0, 1, 0], ['milena.quinteros', 'B', 1, 0, 1, 0],
+  ['nicolas.uliarte', 'B', 9, 8, 0, 1], ['rocio.ferreyra', 'B', 7, 4, 1, 2], ['rocio.fuentecilla', 'B', 23, 16, 5, 2], ['tiziana.martinez', 'B', 1, 1, 0, 0],
+  ['ana.gomez', 'D', 77, 50, 26, 1], ['antonella.carollo', 'D', 4, 2, 2, 0], ['antonella.correa', 'D', 3, 3, 0, 0],
+  ['antonella.cueva', 'D', 40, 32, 7, 1], ['carla.perez', 'D', 2, 2, 0, 0], ['carolina.rosso', 'D', 34, 22, 11, 1],
+  ['cintia.ramos', 'D', 23, 9, 14, 0], ['dahyana.zamorano', 'D', 5, 2, 3, 0], ['daniela.gonzalez', 'D', 11, 2, 8, 1],
+  ['gabriel.aguirre', 'D', 1, 1, 0, 0], ['gonzalo.canut', 'D', 5, 2, 1, 2], ['guada.gomez', 'D', 8, 6, 2, 0],
+  ['ismael.farias', 'D', 6, 2, 4, 0], ['ismael.zamuz', 'D', 40, 31, 8, 1], ['julian.albaro', 'D', 2, 2, 0, 0],
+  ['luz.nieto', 'D', 1, 1, 0, 0], ['malena.arreguez', 'D', 2, 0, 0, 2], ['malena.rosa', 'D', 32, 22, 8, 2],
+  ['maria.jabour', 'D', 12, 8, 4, 0], ['martina.torres', 'D', 3, 2, 1, 0], ['mateo.acosta', 'D', 33, 28, 5, 0],
+  ['mayco.patino', 'D', 33, 22, 9, 2], ['milena.quinteros', 'D', 7, 7, 0, 0], ['nicole.gutierrez', 'D', 1, 1, 0, 0],
+  ['pamela.gigena', 'D', 4, 2, 2, 0], ['paola.escalzo', 'D', 4, 2, 2, 0], ['valentina.masucci', 'D', 4, 3, 1, 0],
+  ['victoria.barraza', 'D', 2, 1, 1, 0], ['wilda.ponce', 'D', 12, 10, 2, 0],
+  ['agostina.cabral', 'E', 11, 8, 2, 1], ['alexander.montaño', 'E', 12, 8, 2, 2], ['carla.lopez', 'E', 4, 2, 2, 0],
+  ['daniela.gonzalez', 'E', 14, 12, 2, 0], ['estefania.ybañez', 'E', 2, 2, 0, 0], ['facundo.barrionuevo', 'E', 21, 20, 1, 0],
+  ['julieta.aguirre', 'E', 1, 1, 0, 0], ['milagros.oviedo', 'E', 17, 16, 1, 0], ['nancy.farias', 'E', 14, 9, 4, 1],
+  ['victoria.barraza', 'E', 14, 12, 2, 0], ['yamila.vega', 'E', 27, 14, 12, 1],
+  ['alan.olivero', 'F', 7, 3, 4, 0], ['antonella.correa', 'F', 45, 27, 14, 4], ['antonella.cueva', 'F', 3, 1, 2, 0],
+  ['barbara.gatica', 'F', 8, 2, 6, 0], ['carla.perez', 'F', 10, 5, 2, 3], ['cintia.ramos', 'F', 1, 0, 1, 0],
+  ['dahyana.zamorano', 'F', 1, 1, 0, 0], ['david.bosio', 'F', 40, 20, 12, 8], ['fabricio.cabral', 'F', 1, 1, 0, 0],
+  ['gabriel.aguirre', 'F', 50, 18, 23, 9], ['julian.albaro', 'F', 35, 13, 6, 16], ['lorena.soria', 'F', 1, 0, 0, 1],
+  ['macarena.basualdo', 'F', 15, 8, 2, 5], ['martina.torres', 'F', 70, 34, 28, 8], ['mateo.acosta', 'F', 1, 0, 1, 0],
+  ['mondel.gomez', 'F', 19, 12, 6, 1], ['nicolas.murua', 'F', 4, 4, 0, 0], ['nicole.gutierrez', 'F', 5, 3, 1, 1],
+  ['noelia.araya', 'F', 1, 1, 0, 0], ['paola.escalzo', 'F', 20, 15, 3, 2], ['santiago.repiso', 'F', 7, 5, 1, 1],
+].map(([name, shift, totalEvents, correctlyAssignedResources, incorrectlyAssignedResources, unassignedResources]) => (
+  operator(name, shift, totalEvents, correctlyAssignedResources, incorrectlyAssignedResources, unassignedResources)
+))
+
+export const resourceOperatorsByPeriod = {
+  '2026-11-14_2026-11-15': november14And15Operators,
+}

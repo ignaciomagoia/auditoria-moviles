@@ -14,7 +14,7 @@ const formatDate = (date) => {
   return `${day}/${month}/${year}`
 }
 
-export const calculateCompliance = ({ totalEvents, assignedResources }) => totalEvents ? assignedResources / totalEvents * 100 : 0
+export const calculateCompliance = ({ totalEvents, correctlyAssignedResources = 0 }) => totalEvents ? correctlyAssignedResources / totalEvents * 100 : 0
 
 export const formatReportPeriod = ({ startDate, endDate }) => {
   const start = Date.parse(`${startDate}T00:00:00Z`)
@@ -24,14 +24,13 @@ export const formatReportPeriod = ({ startDate, endDate }) => {
   return `${formatDate(startDate)} ${separator} ${formatDate(endDate)}`
 }
 
-const drawCard = (pdf, { x, y, label, value, color }) => {
-  const width = 84
+const drawCard = (pdf, { x, y, label, value, color, width = 56 }) => {
   const height = 44
   pdf.setFillColor(250, 252, 253); pdf.roundedRect(x, y, width, height, 3, 3, 'F')
   pdf.setDrawColor(222, 231, 237); pdf.setLineWidth(.35); pdf.roundedRect(x, y, width, height, 3, 3, 'S')
   pdf.setFillColor(...color); pdf.roundedRect(x, y, width, 4, 2.7, 2.7, 'F')
   pdf.setTextColor(91, 112, 130); pdf.setFontSize(7.1); pdf.setFont('helvetica', 'bold')
-  pdf.text(pdf.splitTextToSize(label, 71), x + 6, y + 14)
+  pdf.text(pdf.splitTextToSize(label, width - 12), x + 6, y + 14)
   pdf.setTextColor(29, 51, 73); pdf.setFontSize(20); pdf.setFont('helvetica', 'bold')
   pdf.text(value, x + 6, y + 34)
 }
@@ -59,13 +58,14 @@ export function downloadTwoDayResourcePdf(period, data, zone = '', operatorName 
   pdf.setTextColor(35, 49, 64); pdf.setFontSize(10); pdf.setFont('helvetica', 'bold')
   pdf.text(`Período: ${formatReportPeriod(period)}`, 14, 45)
   pdf.setDrawColor(...color); pdf.setLineWidth(.7); pdf.line(14, 51, 196, 51)
-  pdf.setFontSize(12); pdf.text('RECURSOS ASIGNADOS', 14, 64)
+  pdf.setFontSize(12); pdf.text('ASIGNACIÓN DE RECURSOS', 14, 64)
 
   const cards = [
     { label: 'TOTAL DE EVENTOS', value: format.format(data.totalEvents), x: 14, y: 72 },
-    { label: 'TOTAL DE MÓVILES ASIGNADOS', value: format.format(data.assignedResources), x: 112, y: 72 },
-    { label: 'TOTAL DE MÓVILES SIN ASIGNAR', value: format.format(data.unassignedResources), x: 14, y: 126 },
-    { label: 'PORCENTAJE DE ASIGNACIÓN', value: `${percentFormat.format(compliance)}%`, x: 112, y: 126 },
+    { label: 'ASIGNADOS CORRECTAMENTE', value: format.format(data.correctlyAssignedResources), x: 77, y: 72 },
+    { label: 'ASIGNADOS INCORRECTAMENTE', value: format.format(data.incorrectlyAssignedResources), x: 140, y: 72 },
+    { label: 'MÓVILES SIN ASIGNAR', value: format.format(data.unassignedResources), x: 45.5, y: 122 },
+    { label: 'PORCENTAJE DE ASIGNACIÓN CORRECTA', value: `${percentFormat.format(compliance)}%`, x: 108.5, y: 122 },
   ]
   cards.forEach((card) => drawCard(pdf, { ...card, color }))
 
@@ -81,11 +81,11 @@ export function downloadTwoDayResourcePdf(period, data, zone = '', operatorName 
     }
 
     pdf.setTextColor(35, 49, 64); pdf.setFontSize(11); pdf.setFont('helvetica', 'bold')
-    pdf.text(period.zoneSectionTitle ?? 'M\u00d3VILES SIN ASIGNAR POR CUADRANTE', 14, 188)
+    pdf.text(period.zoneSectionTitle ?? 'M\u00d3VILES SIN ASIGNAR POR CUADRANTE', 14, 182)
     const compactLayout = zoneCards.length > 5
     const positions = compactLayout
-      ? zoneCards.map((_, index) => ({ x: 14 + (index % 5) * 36.9, y: 196 + Math.floor(index / 5) * 31 }))
-      : [{ x: 14, y: 196 }, { x: 77, y: 196 }, { x: 140, y: 196 }, { x: 45.5, y: 235 }, { x: 108.5, y: 235 }]
+      ? zoneCards.map((_, index) => ({ x: 14 + (index % 5) * 36.9, y: 190 + Math.floor(index / 5) * 31 }))
+      : [{ x: 14, y: 190 }, { x: 77, y: 190 }, { x: 140, y: 190 }, { x: 45.5, y: 229 }, { x: 108.5, y: 229 }]
     zoneCards.forEach((item, index) => drawZoneCard(pdf, {
       ...positions[index],
       width: compactLayout ? 34.4 : 56,

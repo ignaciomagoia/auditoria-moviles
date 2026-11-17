@@ -1,5 +1,59 @@
-// Histórico manual de informes de recursos por franja de dos días.
+// Los períodos se publican solo cuando sus datos están completos y validados.
+const stats = (totalEvents = 0, correctlyAssignedResources = 0, incorrectlyAssignedResources = 0, unassignedResources = 0) => ({
+  totalEvents,
+  correctlyAssignedResources,
+  incorrectlyAssignedResources,
+  unassignedResources,
+})
+
+const zoneNames = ['Norte 1', 'Norte 2', 'Este 1', 'Este 2', 'Sur 1', 'Sur 2', 'Centro', 'Oeste', 'Fuera de cuadrante', 'Distrito sin asociar']
+const zones = (entries = {}) => Object.fromEntries(zoneNames.map((name) => [name, entries[name] ?? stats()]))
+
 export const twoDayResourceReports = [
+  {
+    id: '2026-11-14_2026-11-15',
+    label: '14/11 – 15/11',
+    startDate: '2026-11-14',
+    endDate: '2026-11-15',
+    zoneNames,
+    zoneSectionTitle: 'MÓVILES SIN ASIGNAR POR FRECUENCIA',
+    shifts: [
+      { shift: 'A', ...stats() },
+      { shift: 'B', ...stats(225, 159, 45, 21) },
+      { shift: 'C', ...stats() },
+      { shift: 'D', ...stats(411, 277, 121, 13) },
+      { shift: 'E', ...stats(137, 104, 28, 5) },
+      { shift: 'F', ...stats(344, 173, 112, 59) },
+    ],
+    zoneBreakdown: {
+      A: zones(),
+      B: zones({
+        'Norte 1': stats(18, 14, 4, 0), 'Norte 2': stats(1, 1, 0, 0), 'Este 1': stats(49, 34, 13, 2), 'Este 2': stats(38, 34, 2, 2),
+        'Sur 1': stats(19, 17, 1, 1), 'Sur 2': stats(9, 5, 4, 0), Centro: stats(27, 17, 6, 4), Oeste: stats(25, 19, 5, 1),
+        'Fuera de cuadrante': stats(19, 4, 5, 10), 'Distrito sin asociar': stats(20, 14, 5, 1),
+      }),
+      C: zones(),
+      D: zones({
+        'Norte 1': stats(48, 36, 11, 1), 'Norte 2': stats(2, 1, 1, 0), 'Este 1': stats(102, 63, 33, 6), 'Este 2': stats(69, 52, 17, 0),
+        'Sur 1': stats(35, 25, 9, 1), 'Sur 2': stats(18, 2, 15, 1), Centro: stats(39, 28, 10, 1), Oeste: stats(45, 35, 9, 1),
+        'Fuera de cuadrante': stats(16, 7, 7, 2), 'Distrito sin asociar': stats(37, 28, 9, 0),
+      }),
+      E: zones({
+        'Norte 1': stats(11, 8, 3, 0), 'Este 1': stats(35, 24, 10, 1), 'Este 2': stats(20, 13, 7, 0), 'Sur 1': stats(16, 15, 1, 0),
+        'Sur 2': stats(7, 6, 1, 0), Centro: stats(11, 10, 1, 0), Oeste: stats(20, 19, 1, 0),
+        'Fuera de cuadrante': stats(8, 3, 2, 3), 'Distrito sin asociar': stats(9, 6, 2, 1),
+      }),
+      F: zones({
+        'Norte 1': stats(29, 18, 6, 5), 'Norte 2': stats(2, 2, 0, 0), 'Este 1': stats(79, 42, 31, 6), 'Este 2': stats(52, 19, 30, 3),
+        'Sur 1': stats(41, 16, 5, 20), 'Sur 2': stats(17, 10, 4, 3), Centro: stats(35, 19, 9, 7), Oeste: stats(55, 31, 17, 7),
+        'Fuera de cuadrante': stats(12, 2, 3, 7), 'Distrito sin asociar': stats(22, 14, 7, 1),
+      }),
+    },
+    zoneBreakdownNote: 'Los eventos sin cuadrante se contabilizan como fuera de cuadrante.',
+  },
+]
+
+/* Archivo temporal de períodos anteriores, sin publicar en la aplicación.
   {
     id: '2026-11-02_2026-11-03',
     label: '02/11 – 03/11',
@@ -141,3 +195,4 @@ export const twoDayResourceReports = [
     ],
   },
 ]
+*/

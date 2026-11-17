@@ -3,7 +3,6 @@ import { BarChart3, Download, RotateCcw } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { excludeReplacedDailyRecords, parseWorkbook } from './lib/excel'
 import { downloadShiftPdf } from './lib/report'
-import { mobileAuditSummaries } from './data/mobileAuditSummaries.js'
 import { twoDayResourceReports } from './data/twoDayResourceReports.js'
 import { resourceOperatorsByPeriod } from './data/resourceOperators.js'
 import { calculateCompliance, downloadTwoDayResourcePdf } from './lib/twoDayResourceReport.js'
@@ -29,7 +28,7 @@ function Filters({ records, filters, setFilters, view, setView }) {
   }
   const update = (key) => (event) => setFilters((current) => ({ ...current, [key]: event.target.value }))
   return <div className="filters simplified-filters">
-    <label>Contenido<select value={view} onChange={(event) => setView(event.target.value)}><option value="audits">Auditorías por turno</option><option value="mobile-summary">Resumen de Auditoría Móviles</option><option value="two-day-reports">Informes de recursos</option></select></label>
+    <label>Contenido<select value={view} onChange={(event) => setView(event.target.value)}><option value="audits">Auditorías por turno</option><option value="two-day-reports">Informes de recursos</option></select></label>
     <label>Mes / período<select value={filters.month} onChange={update('month')}>{options.month.map((item) => <option key={item}>{item}</option>)}</select></label>
     <label>Semana<select value={filters.week} onChange={update('week')}>{options.week.map((item) => <option key={item}>{item}</option>)}</select></label>
     <label>Auditor<select value={filters.auditor} onChange={update('auditor')}>{options.auditor.map((item) => <option key={item}>{item}</option>)}</select></label>
@@ -37,39 +36,22 @@ function Filters({ records, filters, setFilters, view, setView }) {
   </div>
 }
 
-function MobileAuditSummary({ filters }) {
-  const summaries = mobileAuditSummaries.filter((summary) => (
-    (filters.month === 'Todos' || summary.month === filters.month)
-    && (filters.week === 'Todas' || summary.week === filters.week)
-  ))
-
-  return <section className="mobile-summary" aria-label="Resumen de Auditoría Móviles">
-    <div className="summary-heading"><div><p className="eyebrow">Control operativo</p><h2>Resumen de Auditoría Móviles</h2><p>Cartas asignadas y no asignadas por turno.</p></div></div>
-    {summaries.length ? summaries.map((summary) => <section className="summary-period" key={`${summary.year}-${summary.week}`}>
-      <h3>Semana {summary.week}</h3>
-      <div className="summary-turn-grid">{summary.shifts.map((item) => <article className="summary-turn-card" style={{ '--turn-color': TURN_COLORS[item.shift], '--turn-foreground': TURN_FOREGROUNDS[item.shift] }} key={item.shift}>
-        <header><span className="shift-tag">{item.shift}</span><h4>Turno {item.shift}</h4></header>
-        <dl><div><dt>Cartas</dt><dd>{format.format(item.letters)}</dd></div><div><dt>No asignados</dt><dd>{format.format(item.unassigned)}</dd></div><div><dt>Asignados</dt><dd>{format.format(item.assigned)}</dd></div></dl>
-      </article>)}</div>
-    </section>) : <p className="summary-empty">No hay un resumen de Auditoría Móviles cargado para los filtros seleccionados.</p>}
-  </section>
-}
-
 function TwoDayResourceReports() {
   const [periodId, setPeriodId] = useState(twoDayResourceReports[0]?.id ?? '')
   const [zone, setZone] = useState('')
   const [operatorName, setOperatorName] = useState('')
   const period = twoDayResourceReports.find((item) => item.id === periodId)
-  if (!period) return null
+  if (!period) return <section className="two-day-reports" aria-label="Informes de recursos"><div className="summary-heading resource-report-heading"><div><p className="eyebrow">Control operativo</p><h2>Informes de recursos</h2><p>Próximamente se cargarán los datos del 14 y 15 de noviembre.</p></div></div></section>
   const operators = resourceOperatorsByPeriod[period.id] ?? []
   const zoneNames = period.zoneNames ?? ['Norte', 'Sur', 'Este', 'Centro/Oeste']
   const selectedOperator = operators.find((item) => item.id === operatorName)
   const shifts = operators.length ? TURNOS.map((shift) => operators.filter((item) => item.shift === shift).reduce((total, item) => ({
     shift,
     totalEvents: total.totalEvents + item.totalEvents,
-    assignedResources: total.assignedResources + item.assignedResources,
+    correctlyAssignedResources: total.correctlyAssignedResources + item.correctlyAssignedResources,
+    incorrectlyAssignedResources: total.incorrectlyAssignedResources + item.incorrectlyAssignedResources,
     unassignedResources: total.unassignedResources + item.unassignedResources,
-  }), { shift, totalEvents: 0, assignedResources: 0, unassignedResources: 0 })) : period.shifts
+  }), { shift, totalEvents: 0, correctlyAssignedResources: 0, incorrectlyAssignedResources: 0, unassignedResources: 0 })).filter((item) => item.totalEvents > 0) : period.shifts.filter((item) => item.totalEvents > 0)
   const selectPeriod = (event) => { setPeriodId(event.target.value); setZone(''); setOperatorName('') }
   const selectZone = (event) => { setZone(event.target.value); setOperatorName('') }
   const selectOperator = (event) => { setOperatorName(event.target.value); setZone('') }
@@ -83,7 +65,7 @@ function TwoDayResourceReports() {
       const compliance = calculateCompliance(item)
       return <article className="resource-report-card" style={{ '--turn-color': TURN_COLORS[item.shift], '--turn-foreground': TURN_FOREGROUNDS[item.shift], '--turn-ink': TURN_INKS[item.shift] }} key={item.shift}>
         <header><span className="shift-tag">{item.shift}</span><div><h3>{selectedOperator ? item.name : `Turno ${item.shift}`}</h3><p>{selectedOperator ? `Turno ${item.shift} · Recurso asignado` : zone ? `Zona ${zone}` : 'Recurso asignado'}</p></div><button className="turn-pdf" onClick={() => downloadTwoDayResourcePdf(period, item, zone, selectedOperator?.name)}><Download size={15} /> Descargar PDF</button></header>
-        <dl><div><dt>Total de eventos</dt><dd>{format.format(item.totalEvents)}</dd></div><div><dt>Total de móviles asignados</dt><dd>{format.format(item.assignedResources)}</dd></div><div><dt>Total de móviles sin asignar</dt><dd>{format.format(item.unassignedResources)}</dd></div><div><dt>Porcentaje de asignación</dt><dd>{compliance.toFixed(1)}%</dd></div></dl>
+        <dl><div><dt>Total de eventos</dt><dd>{format.format(item.totalEvents)}</dd></div><div><dt>Asignados correctamente</dt><dd>{format.format(item.correctlyAssignedResources)}</dd></div><div><dt>Asignados incorrectamente</dt><dd>{format.format(item.incorrectlyAssignedResources)}</dd></div><div><dt>Móviles sin asignar</dt><dd>{format.format(item.unassignedResources)}</dd></div><div><dt>Porcentaje de asignación correcta</dt><dd>{compliance.toFixed(1)}%</dd></div></dl>
       </article>
     })}</div>
     {zone && period.zoneBreakdownNote && <p className="resource-zone-note">{period.zoneBreakdownNote}</p>}
@@ -184,7 +166,7 @@ export default function App() {
   const filtered = useMemo(() => periodRecords.filter((record) => filters.auditor === 'Todos' || record.auditorList.includes(filters.auditor)), [periodRecords, filters.auditor])
   const requestPdf = (shift, shiftRecords) => { setPdfObservation(''); setPdfRequest({ shift, records: shiftRecords }) }
   const generatePdf = () => { if (!pdfRequest) return; downloadShiftPdf(pdfRequest.shift, pdfRequest.records, TURN_COLORS[pdfRequest.shift], periodRecords, pdfObservation); setPdfRequest(null); setPdfObservation('') }
-  return <><Header active="dashboard" /><main className="app-shell"><section className="intro"><div><p className="eyebrow">Última semana cargada · {latestWeek}</p><h1>Auditoría de móviles</h1><p>Seguimiento de alertas y cumplimiento por turno.</p></div></section><Filters records={availableRecords} filters={filters} setFilters={setFilters} view={view} setView={setView} />{view === 'mobile-summary' ? <MobileAuditSummary filters={filters} /> : view === 'two-day-reports' ? <TwoDayResourceReports /> : <><ShiftBlocks records={filtered} onRequestPdf={requestPdf} /><Charts records={filtered} /></>}</main><PdfModal request={pdfRequest} observation={pdfObservation} onObservationChange={setPdfObservation} onCancel={() => { setPdfRequest(null); setPdfObservation('') }} onGenerate={generatePdf} /></>
+  return <><Header active="dashboard" /><main className="app-shell"><section className="intro"><div><p className="eyebrow">Última semana cargada · {latestWeek}</p><h1>Auditoría de móviles</h1><p>Seguimiento de alertas y cumplimiento por turno.</p></div></section><Filters records={availableRecords} filters={filters} setFilters={setFilters} view={view} setView={setView} />{view === 'two-day-reports' ? <TwoDayResourceReports /> : <><ShiftBlocks records={filtered} onRequestPdf={requestPdf} /><Charts records={filtered} /></>}</main><PdfModal request={pdfRequest} observation={pdfObservation} onObservationChange={setPdfObservation} onCancel={() => { setPdfRequest(null); setPdfObservation('') }} onGenerate={generatePdf} /></>
 }
 
 function Header() { return <header className="topbar"><a className="brand" href="/"><span className="brand-mark"><BarChart3 size={19} /></span><span>Auditoría <b>2026</b></span></a></header> }
