@@ -140,6 +140,32 @@ const november14And15Operators = [
   operator(name, shift, totalEvents, correctlyAssignedResources, incorrectlyAssignedResources, unassignedResources)
 ))
 
+const november16And17Operators = [
+  ['agostina.ledezma', 'A', 1, 1, 0, 0], ['agustina.amaya', 'A', 20, 16, 4, 0], ['brenda.romero', 'A', 4, 4, 0, 0],
+  ['deborah.juarez', 'A', 10, 8, 2, 0], ['florencia.ojeda', 'A', 24, 15, 9, 0], ['florencia.rosso', 'A', 9, 8, 1, 0],
+  ['gabriel.diaz', 'A', 16, 8, 8, 0], ['ismael.farias', 'A', 5, 3, 1, 1], ['leandro.iglesias', 'A', 7, 6, 1, 0],
+  ['lisandro.rosales', 'A', 1, 1, 0, 0], ['macarena.basualdo', 'A', 1, 1, 0, 0], ['martina.gomez', 'A', 1, 1, 0, 0],
+  ['melisa.bonaldi', 'A', 9, 4, 5, 0], ['nicolas.murua', 'A', 1, 1, 0, 0], ['noelia.gorosito', 'A', 12, 5, 7, 0],
+  ['pablo.azize', 'A', 1, 1, 0, 0], ['regina.olmedo', 'A', 2, 2, 0, 0], ['santiago.guzman', 'A', 26, 21, 4, 1], ['valentina.gomez', 'A', 24, 16, 7, 1],
+  ['agostina.cabral', 'C', 2, 2, 0, 0], ['agustin.diaz', 'C', 1, 1, 0, 0], ['ana.varela', 'C', 16, 10, 6, 0],
+  ['camila.quevedo', 'C', 2, 2, 0, 0], ['facundo.barrionuevo', 'C', 1, 1, 0, 0], ['gonzalo.canut', 'C', 2, 2, 0, 0],
+  ['ismael.farias', 'C', 2, 1, 1, 0], ['ivon.ocaño', 'C', 14, 13, 1, 0], ['jazmin.orioni', 'C', 19, 14, 5, 0],
+  ['macarena.basualdo', 'C', 1, 0, 1, 0], ['maico.ocaña', 'C', 3, 0, 3, 0], ['maria.jabour', 'C', 19, 16, 3, 0],
+  ['martina.gomez', 'C', 31, 22, 9, 0], ['mayra.matrangulo', 'C', 16, 13, 3, 0], ['milena.quinteros', 'C', 15, 11, 3, 1],
+  ['nancy.farias', 'C', 2, 2, 0, 0], ['nicolas.murua', 'C', 31, 17, 14, 0], ['noelia.farias', 'C', 17, 13, 4, 0],
+  ['regina.olmedo', 'C', 40, 26, 12, 2], ['rocio.vidart', 'C', 3, 0, 1, 2], ['sofia.gonzalez', 'C', 17, 10, 7, 0],
+  ['sofia.jabour', 'C', 39, 27, 10, 2], ['tiziana.martinez', 'C', 5, 2, 3, 0], ['tomas.fernandez', 'C', 1, 0, 1, 0], ['yamila.vega', 'C', 1, 1, 0, 0],
+  ['agostina.cabral', 'E', 11, 5, 4, 2], ['alexander.montaño', 'E', 19, 14, 5, 0], ['camila.quevedo', 'E', 4, 3, 1, 0],
+  ['daniela.gonzalez', 'E', 8, 6, 2, 0], ['facundo.barrionuevo', 'E', 9, 8, 0, 1], ['julieta.aguirre', 'E', 4, 4, 0, 0],
+  ['milagros.oviedo', 'E', 4, 2, 2, 0], ['nancy.farias', 'E', 15, 7, 7, 1], ['tiziana.martinez', 'E', 1, 0, 1, 0], ['yamila.vega', 'E', 14, 11, 3, 0],
+  ['antonella.correa', 'F', 8, 4, 3, 1], ['carla.perez', 'F', 7, 6, 0, 1], ['david.bosio', 'F', 11, 7, 1, 3],
+  ['gabriel.aguirre', 'F', 5, 1, 3, 1], ['julian.albaro', 'F', 11, 7, 1, 3], ['martina.torres', 'F', 28, 21, 7, 0],
+  ['nicolas.murua', 'F', 3, 2, 0, 1], ['nicole.gutierrez', 'F', 9, 6, 1, 2], ['paola.escalzo', 'F', 13, 8, 4, 1], ['santiago.repiso', 'F', 12, 9, 3, 0],
+].map(([name, shift, totalEvents, correctlyAssignedResources, incorrectlyAssignedResources, unassignedResources]) => (
+  operator(name, shift, totalEvents, correctlyAssignedResources, incorrectlyAssignedResources, unassignedResources)
+))
+
 export const resourceOperatorsByPeriod = {
+  '2026-11-16_2026-11-17': november16And17Operators,
   '2026-11-14_2026-11-15': november14And15Operators,
 }

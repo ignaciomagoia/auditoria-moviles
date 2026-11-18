@@ -11,6 +11,47 @@ const zones = (entries = {}) => Object.fromEntries(zoneNames.map((name) => [name
 
 export const twoDayResourceReports = [
   {
+    id: '2026-11-16_2026-11-17',
+    label: '16/11 – 17/11',
+    startDate: '2026-11-16',
+    endDate: '2026-11-17',
+    zoneNames,
+    zoneSectionTitle: 'MÓVILES SIN ASIGNAR POR FRECUENCIA',
+    shifts: [
+      { shift: 'A', ...stats(174, 122, 49, 3) },
+      { shift: 'B', ...stats() },
+      { shift: 'C', ...stats(300, 206, 87, 7) },
+      { shift: 'D', ...stats() },
+      { shift: 'E', ...stats(89, 60, 25, 4) },
+      { shift: 'F', ...stats(107, 71, 23, 13) },
+    ],
+    zoneBreakdown: {
+      A: zones({
+        'Norte 1': stats(15, 14, 1, 0), 'Norte 2': stats(1, 1, 0, 0), 'Este 1': stats(36, 28, 8, 0), 'Este 2': stats(19, 13, 6, 0),
+        'Sur 1': stats(20, 14, 6, 0), 'Sur 2': stats(7, 4, 3, 0), Centro: stats(23, 16, 7, 0), Oeste: stats(29, 18, 11, 0),
+        'Fuera de cuadrante': stats(10, 3, 4, 3), 'Distrito sin asociar': stats(14, 11, 3, 0),
+      }),
+      B: zones(),
+      C: zones({
+        'Norte 1': stats(33, 25, 7, 1), 'Norte 2': stats(4, 1, 3, 0), 'Este 1': stats(50, 39, 10, 1), 'Este 2': stats(40, 31, 9, 0),
+        'Sur 1': stats(37, 22, 15, 0), 'Sur 2': stats(22, 19, 3, 0), Centro: stats(33, 25, 8, 0), Oeste: stats(40, 25, 15, 0),
+        'Fuera de cuadrante': stats(14, 6, 5, 3), 'Distrito sin asociar': stats(27, 13, 12, 2),
+      }),
+      D: zones(),
+      E: zones({
+        'Norte 1': stats(6, 6, 0, 0), 'Este 1': stats(23, 16, 7, 0), 'Este 2': stats(6, 3, 3, 0), 'Sur 1': stats(8, 8, 0, 0),
+        'Sur 2': stats(9, 8, 1, 0), Centro: stats(13, 6, 7, 0), Oeste: stats(12, 12, 0, 0),
+        'Fuera de cuadrante': stats(4, 0, 2, 2), 'Distrito sin asociar': stats(8, 1, 5, 2),
+      }),
+      F: zones({
+        'Norte 1': stats(12, 9, 3, 0), 'Norte 2': stats(2, 1, 1, 0), 'Este 1': stats(33, 21, 10, 2), 'Este 2': stats(16, 13, 2, 1),
+        'Sur 1': stats(19, 12, 2, 5), 'Sur 2': stats(3, 2, 0, 1), Centro: stats(12, 7, 3, 2), Oeste: stats(2, 1, 1, 0),
+        'Fuera de cuadrante': stats(3, 3, 0, 0), 'Distrito sin asociar': stats(5, 2, 1, 2),
+      }),
+    },
+    zoneBreakdownNote: 'Los eventos sin cuadrante se contabilizan como fuera de cuadrante.',
+  },
+  {
     id: '2026-11-14_2026-11-15',
     label: '14/11 – 15/11',
     startDate: '2026-11-14',
