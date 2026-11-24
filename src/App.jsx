@@ -63,9 +63,11 @@ function TwoDayResourceReports() {
       const zoneData = zone ? period.zoneBreakdown?.[original.shift]?.[zone] : null
       const item = zoneData ? { ...original, ...zoneData } : original
       const compliance = calculateCompliance(item)
+      const incorrectPercentage = item.totalEvents ? item.incorrectlyAssignedResources / item.totalEvents * 100 : 0
+      const unassignedPercentage = item.totalEvents ? item.unassignedResources / item.totalEvents * 100 : 0
       return <article className="resource-report-card" style={{ '--turn-color': TURN_COLORS[item.shift], '--turn-foreground': TURN_FOREGROUNDS[item.shift], '--turn-ink': TURN_INKS[item.shift] }} key={item.shift}>
         <header><span className="shift-tag">{item.shift}</span><div><h3>{selectedOperator ? item.name : `Turno ${item.shift}`}</h3><p>{selectedOperator ? `Turno ${item.shift} · Recurso asignado` : zone ? `Zona ${zone}` : 'Recurso asignado'}</p></div><button className="turn-pdf" onClick={() => downloadTwoDayResourcePdf(period, item, zone, selectedOperator?.name)}><Download size={15} /> Descargar PDF</button></header>
-        <dl><div><dt>Total de eventos</dt><dd>{format.format(item.totalEvents)}</dd></div><div><dt>Asignados correctamente</dt><dd>{format.format(item.correctlyAssignedResources)}</dd></div><div><dt>Asignados incorrectamente</dt><dd>{format.format(item.incorrectlyAssignedResources)}</dd></div><div><dt>Móviles sin asignar</dt><dd>{format.format(item.unassignedResources)}</dd></div><div><dt>Porcentaje de asignación correcta</dt><dd>{compliance.toFixed(1)}%</dd></div></dl>
+        <dl><div><dt>Total de eventos</dt><dd>{format.format(item.totalEvents)}</dd></div><div><dt>Asignados correctamente</dt><dd>{format.format(item.correctlyAssignedResources)}</dd></div><div><dt>Asignados incorrectamente</dt><dd>{format.format(item.incorrectlyAssignedResources)}</dd></div><div><dt>Móviles sin asignar</dt><dd>{format.format(item.unassignedResources)}</dd></div><div><dt>% asignación correcta</dt><dd>{compliance.toFixed(1)}%</dd></div><div><dt>% asignación incorrecta</dt><dd>{incorrectPercentage.toFixed(1)}%</dd></div><div><dt>% sin asignar</dt><dd>{unassignedPercentage.toFixed(1)}%</dd></div></dl>
       </article>
     })}</div>
     {zone && period.zoneBreakdownNote && <p className="resource-zone-note">{period.zoneBreakdownNote}</p>}

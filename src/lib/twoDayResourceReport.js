@@ -24,15 +24,14 @@ export const formatReportPeriod = ({ startDate, endDate }) => {
   return `${formatDate(startDate)} ${separator} ${formatDate(endDate)}`
 }
 
-const drawCard = (pdf, { x, y, label, value, color, width = 56 }) => {
-  const height = 44
+const drawCard = (pdf, { x, y, label, value, color, width = 44, height = 38 }) => {
   pdf.setFillColor(250, 252, 253); pdf.roundedRect(x, y, width, height, 3, 3, 'F')
   pdf.setDrawColor(222, 231, 237); pdf.setLineWidth(.35); pdf.roundedRect(x, y, width, height, 3, 3, 'S')
-  pdf.setFillColor(...color); pdf.roundedRect(x, y, width, 4, 2.7, 2.7, 'F')
-  pdf.setTextColor(91, 112, 130); pdf.setFontSize(7.1); pdf.setFont('helvetica', 'bold')
-  pdf.text(pdf.splitTextToSize(label, width - 12), x + 6, y + 14)
-  pdf.setTextColor(29, 51, 73); pdf.setFontSize(20); pdf.setFont('helvetica', 'bold')
-  pdf.text(value, x + 6, y + 34)
+  pdf.setFillColor(...color); pdf.roundedRect(x, y, width, 3.5, 2.7, 2.7, 'F')
+  pdf.setTextColor(91, 112, 130); pdf.setFontSize(5.1); pdf.setFont('helvetica', 'bold')
+  pdf.text(pdf.splitTextToSize(label, width - 8), x + 4, y + 9)
+  pdf.setTextColor(29, 51, 73); pdf.setFontSize(15); pdf.setFont('helvetica', 'bold')
+  pdf.text(value, x + 4, y + height - 6)
 }
 
 const drawZoneCard = (pdf, { x, y, width, height = 31, label, value, color }) => {
@@ -49,6 +48,8 @@ export function downloadTwoDayResourcePdf(period, data, zone = '', operatorName 
   const pdf = new jsPDF({ unit: 'mm', format: 'a4' })
   const color = hexToRgb(TURN_COLORS[data.shift])
   const compliance = calculateCompliance(data)
+  const incorrectPercentage = data.totalEvents ? data.incorrectlyAssignedResources / data.totalEvents * 100 : 0
+  const unassignedPercentage = data.totalEvents ? data.unassignedResources / data.totalEvents * 100 : 0
 
   pdf.setFillColor(...color); pdf.rect(0, 0, 210, 32, 'F')
   pdf.setTextColor(255, 255, 255); pdf.setFontSize(19); pdf.setFont('helvetica', 'bold'); pdf.text('INFORME', 14, 14)
@@ -62,14 +63,17 @@ export function downloadTwoDayResourcePdf(period, data, zone = '', operatorName 
 
   const cards = [
     { label: 'TOTAL DE EVENTOS', value: format.format(data.totalEvents), x: 14, y: 72 },
-    { label: 'ASIGNADOS CORRECTAMENTE', value: format.format(data.correctlyAssignedResources), x: 77, y: 72 },
-    { label: 'ASIGNADOS INCORRECTAMENTE', value: format.format(data.incorrectlyAssignedResources), x: 140, y: 72 },
-    { label: 'MÓVILES SIN ASIGNAR', value: format.format(data.unassignedResources), x: 45.5, y: 122 },
-    { label: 'PORCENTAJE DE ASIGNACIÓN CORRECTA', value: `${percentFormat.format(compliance)}%`, x: 108.5, y: 122 },
+    { label: 'ASIGNADOS CORRECTAMENTE', value: format.format(data.correctlyAssignedResources), x: 60, y: 72 },
+    { label: 'ASIGNADOS INCORRECTAMENTE', value: format.format(data.incorrectlyAssignedResources), x: 106, y: 72 },
+    { label: 'MÓVILES SIN ASIGNAR', value: format.format(data.unassignedResources), x: 152, y: 72 },
+    { label: '% ASIGNACIÓN CORRECTA', value: `${percentFormat.format(compliance)}%`, x: 37, y: 116 },
+    { label: '% ASIGNACIÓN INCORRECTA', value: `${percentFormat.format(incorrectPercentage)}%`, x: 83, y: 116 },
+    { label: '% SIN ASIGNAR', value: `${percentFormat.format(unassignedPercentage)}%`, x: 129, y: 116 },
   ]
   cards.forEach((card) => drawCard(pdf, { ...card, color }))
 
   const zoneBreakdown = !zone && !operatorName ? period.zoneBreakdown?.[data.shift] : null
+  let observationY = 169
   if (zoneBreakdown) {
     const zones = period.zoneNames ?? ['Norte', 'Sur', 'Este', 'Centro/Oeste']
     const zoneCards = zones
@@ -81,11 +85,11 @@ export function downloadTwoDayResourcePdf(period, data, zone = '', operatorName 
     }
 
     pdf.setTextColor(35, 49, 64); pdf.setFontSize(11); pdf.setFont('helvetica', 'bold')
-    pdf.text(period.zoneSectionTitle ?? 'M\u00d3VILES SIN ASIGNAR POR CUADRANTE', 14, 182)
+    pdf.text(period.zoneSectionTitle ?? 'M\u00d3VILES SIN ASIGNAR POR CUADRANTE', 14, 165)
     const compactLayout = zoneCards.length > 5
     const positions = compactLayout
-      ? zoneCards.map((_, index) => ({ x: 14 + (index % 5) * 36.9, y: 190 + Math.floor(index / 5) * 31 }))
-      : [{ x: 14, y: 190 }, { x: 77, y: 190 }, { x: 140, y: 190 }, { x: 45.5, y: 229 }, { x: 108.5, y: 229 }]
+      ? zoneCards.map((_, index) => ({ x: 14 + (index % 5) * 36.9, y: 173 + Math.floor(index / 5) * 31 }))
+      : [{ x: 14, y: 173 }, { x: 77, y: 173 }, { x: 140, y: 173 }, { x: 45.5, y: 212 }, { x: 108.5, y: 212 }]
     zoneCards.forEach((item, index) => drawZoneCard(pdf, {
       ...positions[index],
       width: compactLayout ? 34.4 : 56,
@@ -94,7 +98,14 @@ export function downloadTwoDayResourcePdf(period, data, zone = '', operatorName 
       value: format.format(item.value),
       color,
     }))
+    observationY = compactLayout ? 239 : 253
   }
+
+  pdf.setTextColor(35, 49, 64); pdf.setFontSize(9); pdf.setFont('helvetica', 'bold')
+  pdf.text('OBSERVACIONES', 14, observationY)
+  pdf.setTextColor(91, 112, 130); pdf.setFontSize(9); pdf.setFont('helvetica', 'normal')
+  const observation = 'Las fallas detectadas en la asignación incorrecta de móviles no responden a una única causa. Un porcentaje de las mismas se origina en falencias propias del móvil, mientras que el porcentaje restante corresponde a falencias del radio operador al momento de efectuar la asignación del móvil.'
+  pdf.text(pdf.splitTextToSize(observation, 180), 14, observationY + 8)
 
   pdf.setTextColor(110, 128, 144); pdf.setFontSize(8); pdf.setFont('helvetica', 'normal')
   pdf.text(`Informe de recursos · Turno ${data.shift}`, 14, 289)
