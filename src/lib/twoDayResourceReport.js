@@ -28,7 +28,7 @@ const drawCard = (pdf, { x, y, label, value, color, width = 44, height = 38 }) =
   pdf.setFillColor(250, 252, 253); pdf.roundedRect(x, y, width, height, 3, 3, 'F')
   pdf.setDrawColor(222, 231, 237); pdf.setLineWidth(.35); pdf.roundedRect(x, y, width, height, 3, 3, 'S')
   pdf.setFillColor(...color); pdf.roundedRect(x, y, width, 3.5, 2.7, 2.7, 'F')
-  pdf.setTextColor(91, 112, 130); pdf.setFontSize(5.1); pdf.setFont('helvetica', 'bold')
+  pdf.setTextColor(91, 112, 130); pdf.setFontSize(7); pdf.setFont('helvetica', 'bold')
   pdf.text(pdf.splitTextToSize(label, width - 8), x + 4, y + 9)
   pdf.setTextColor(29, 51, 73); pdf.setFontSize(15); pdf.setFont('helvetica', 'bold')
   pdf.text(value, x + 4, y + height - 6)
@@ -53,7 +53,7 @@ export function downloadTwoDayResourcePdf(period, data, zone = '', operatorName 
 
   pdf.setFillColor(...color); pdf.rect(0, 0, 210, 32, 'F')
   pdf.setTextColor(255, 255, 255); pdf.setFontSize(19); pdf.setFont('helvetica', 'bold'); pdf.text('INFORME', 14, 14)
-  pdf.setFontSize(9); pdf.setFont('helvetica', 'normal'); pdf.text(`Turno ${data.shift} · Recurso asignado`, 14, 22)
+  pdf.setFontSize(9); pdf.setFont('helvetica', 'bold'); pdf.text(`Turno ${data.shift} · Recurso asignado`, 14, 22)
   if (operatorName) { pdf.setTextColor(255, 255, 255); pdf.setFontSize(8); pdf.setFont('helvetica', 'normal'); pdf.text(`Operador: ${operatorName}`, 14, 28) }
   if (zone) { pdf.setTextColor(255, 255, 255); pdf.setFontSize(8); pdf.setFont('helvetica', 'normal'); pdf.text(`Zona ${zone}`, 14, 28) }
   pdf.setTextColor(35, 49, 64); pdf.setFontSize(10); pdf.setFont('helvetica', 'bold')
@@ -103,7 +103,7 @@ export function downloadTwoDayResourcePdf(period, data, zone = '', operatorName 
 
   pdf.setTextColor(35, 49, 64); pdf.setFontSize(9); pdf.setFont('helvetica', 'bold')
   pdf.text('OBSERVACIONES', 14, observationY)
-  pdf.setTextColor(91, 112, 130); pdf.setFontSize(9); pdf.setFont('helvetica', 'normal')
+  pdf.setTextColor(91, 112, 130); pdf.setFontSize(10); pdf.setFont('helvetica', 'normal')
   const observation = 'Las fallas detectadas en la asignación incorrecta de móviles no responden a una única causa. Un porcentaje de las mismas se origina en falencias propias del móvil, mientras que el porcentaje restante corresponde a falencias del radio operador al momento de efectuar la asignación del móvil.'
   pdf.text(pdf.splitTextToSize(observation, 180), 14, observationY + 8)
 
