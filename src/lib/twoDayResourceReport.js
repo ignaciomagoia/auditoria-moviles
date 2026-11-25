@@ -84,17 +84,17 @@ export function downloadTwoDayResourcePdf(period, data, zone = '', operatorName 
     pdf.text(period.zoneSectionTitle ?? 'M\u00d3VILES SIN ASIGNAR POR CUADRANTE', 14, 165)
     const compactLayout = zoneCards.length > 5
     const positions = compactLayout
-      ? zoneCards.map((_, index) => ({ x: 14 + (index % 5) * 36.9, y: 173 + Math.floor(index / 5) * 31 }))
+      ? zoneCards.map((_, index) => ({ x: 14 + (index % 4) * 47.33, y: 173 + Math.floor(index / 4) * 31 }))
       : [{ x: 14, y: 173 }, { x: 77, y: 173 }, { x: 140, y: 173 }, { x: 45.5, y: 212 }, { x: 108.5, y: 212 }]
     zoneCards.forEach((item, index) => drawZoneCard(pdf, {
       ...positions[index],
-      width: compactLayout ? 34.4 : 56,
+      width: compactLayout ? 40 : 56,
       height: compactLayout ? 25 : 31,
       label: item.label,
       value: format.format(item.value),
       color,
     }))
-    observationY = compactLayout ? 239 : 253
+    observationY = compactLayout ? 244 : 253
   }
 
   pdf.setTextColor(35, 49, 64); pdf.setFontSize(9); pdf.setFont('helvetica', 'bold')
