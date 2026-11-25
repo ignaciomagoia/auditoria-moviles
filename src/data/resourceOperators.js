@@ -193,8 +193,62 @@ const november22And23Operators = [
   operator(name, shift, totalEvents, correctlyAssignedResources, incorrectlyAssignedResources, unassignedResources)
 ))
 
+const outsideAdjustments = (rows) => new Map(rows.map(([name, shift, totalEvents, correctlyAssignedResources, incorrectlyAssignedResources, unassignedResources]) => [
+  `${name}|${shift}`,
+  { totalEvents, correctlyAssignedResources, incorrectlyAssignedResources, unassignedResources },
+]))
+
+const excludeOutsideQuadrant = (operators, adjustments) => operators.map((item) => {
+  const excluded = adjustments.get(item.id)
+  if (!excluded) return item
+  return {
+    ...item,
+    totalEvents: item.totalEvents - excluded.totalEvents,
+    correctlyAssignedResources: item.correctlyAssignedResources - excluded.correctlyAssignedResources,
+    incorrectlyAssignedResources: item.incorrectlyAssignedResources - excluded.incorrectlyAssignedResources,
+    unassignedResources: item.unassignedResources - excluded.unassignedResources,
+  }
+}).filter((item) => item.totalEvents > 0)
+
+const outsideNovember14And15 = outsideAdjustments([
+  ['antonella.correa', 'F', 2, 1, 1, 0], ['martina.torres', 'D', 1, 0, 1, 0], ['malena.rosa', 'D', 3, 0, 2, 1],
+  ['antonella.cueva', 'D', 3, 2, 1, 0], ['julian.albaro', 'D', 1, 1, 0, 0], ['mayco.patino', 'D', 3, 1, 1, 1],
+  ['mateo.acosta', 'D', 1, 1, 0, 0], ['ana.gomez', 'D', 2, 1, 1, 0], ['lorena.soria', 'B', 2, 0, 1, 1],
+  ['rocio.ferreyra', 'B', 2, 0, 0, 2], ['julieta.rivarola', 'B', 1, 1, 0, 0], ['celeste.suarez', 'B', 2, 0, 1, 1],
+  ['rocio.fuentecilla', 'B', 4, 1, 1, 2], ['ismael.farias', 'B', 1, 0, 1, 0], ['delfina.paz', 'B', 2, 0, 0, 2],
+  ['agostina.cabral', 'E', 1, 1, 0, 0], ['milagros.oviedo', 'E', 1, 1, 0, 0], ['victoria.barraza', 'E', 1, 0, 1, 0],
+  ['nancy.farias', 'E', 3, 0, 1, 2], ['alexander.montaño', 'E', 1, 0, 0, 1], ['facundo.barrionuevo', 'E', 1, 1, 0, 0], ['david.bosio', 'F', 1, 0, 0, 1],
+  ['santiago.repiso', 'F', 1, 0, 0, 1], ['daniela.gonzalez', 'D', 1, 1, 0, 0], ['antonella.carollo', 'D', 1, 0, 1, 0],
+  ['luisiana.unamuno', 'B', 1, 0, 0, 1], ['nicolas.uliarte', 'B', 1, 0, 0, 1], ['fabricio.cabral', 'B', 1, 0, 1, 0],
+  ['hernan.fuentes', 'B', 2, 2, 0, 0], ['paola.escalzo', 'F', 1, 0, 0, 1], ['martina.torres', 'F', 2, 0, 0, 2],
+  ['gabriel.aguirre', 'F', 1, 1, 0, 0], ['julian.albaro', 'F', 3, 0, 2, 1], ['mondel.gomez', 'F', 1, 0, 0, 1],
+])
+
+const outsideNovember16And17 = outsideAdjustments([
+  ['agostina.cabral', 'E', 1, 0, 1, 0], ['regina.olmedo', 'C', 1, 0, 0, 1], ['rocio.vidart', 'C', 1, 0, 1, 0],
+  ['mayra.matrangulo', 'C', 1, 1, 0, 0], ['milena.quinteros', 'C', 1, 0, 0, 1], ['sofia.gonzalez', 'C', 1, 1, 0, 0],
+  ['sofia.jabour', 'C', 4, 2, 1, 1], ['nicolas.murua', 'C', 1, 0, 1, 0], ['valentina.gomez', 'A', 3, 0, 2, 1],
+  ['florencia.ojeda', 'A', 1, 1, 0, 0], ['ismael.farias', 'A', 1, 0, 0, 1], ['nancy.farias', 'E', 2, 0, 1, 1],
+  ['facundo.barrionuevo', 'E', 1, 0, 0, 1], ['ana.varela', 'C', 2, 1, 1, 0], ['tiziana.martinez', 'C', 1, 0, 1, 0],
+  ['noelia.farias', 'C', 1, 1, 0, 0], ['agustina.amaya', 'A', 1, 1, 0, 0], ['santiago.guzman', 'A', 2, 1, 0, 1],
+  ['gabriel.diaz', 'A', 1, 0, 1, 0], ['noelia.gorosito', 'A', 1, 0, 1, 0], ['julian.albaro', 'F', 2, 2, 0, 0], ['carla.perez', 'F', 1, 1, 0, 0],
+])
+
+const outsideNovember22And23 = outsideAdjustments([
+  ['isabel.leiva', 'F', 2, 1, 0, 1], ['malena.rosa', 'D', 3, 3, 0, 0], ['wilda.ponce', 'D', 1, 1, 0, 0],
+  ['carolina.rosso', 'D', 2, 1, 0, 1], ['julieta.rivarola', 'B', 2, 1, 0, 1], ['fabricio.cabral', 'B', 2, 0, 2, 0],
+  ['rocio.ferreyra', 'B', 2, 0, 1, 1], ['luz.nieto', 'B', 3, 1, 1, 1], ['rocio.fuentecilla', 'B', 2, 1, 1, 0],
+  ['luisiana.unamuno', 'B', 1, 0, 0, 1], ['maria.criado', 'F', 3, 0, 2, 1], ['julian.albaro', 'F', 1, 1, 0, 0],
+  ['david.bosio', 'F', 2, 1, 1, 0], ['paola.escalzo', 'F', 3, 0, 0, 3], ['gabriel.aguirre', 'F', 2, 1, 0, 1],
+  ['elodina.barrera', 'F', 1, 1, 0, 0], ['guada.gomez', 'D', 2, 2, 0, 0], ['gabriel.aguirre', 'D', 1, 0, 1, 0],
+  ['milena.quinteros', 'D', 1, 0, 1, 0], ['cintia.ramos', 'D', 1, 1, 0, 0], ['veronica.paz', 'D', 1, 1, 0, 0],
+  ['hernan.fuentes', 'E', 3, 0, 1, 2], ['nancy.farias', 'E', 2, 0, 0, 2], ['yazmin.abrego', 'E', 3, 3, 0, 0],
+  ['florencia.ojeda', 'E', 2, 0, 0, 2], ['mia.ledesma', 'E', 1, 1, 0, 0], ['daniela.gonzalez', 'E', 1, 0, 0, 1],
+  ['camila.quevedo', 'E', 1, 0, 0, 1], ['franco.barrionuevo', 'E', 1, 1, 0, 0], ['julieta.aguirre', 'E', 1, 0, 0, 1],
+])
+
 export const resourceOperatorsByPeriod = {
-  '2026-11-22_2026-11-23': november22And23Operators,
-  '2026-11-16_2026-11-17': november16And17Operators,
-  '2026-11-14_2026-11-15': november14And15Operators,
+  '2026-11-22_2026-11-23': excludeOutsideQuadrant(november22And23Operators, outsideNovember22And23),
+  '2026-11-16_2026-11-17': excludeOutsideQuadrant(november16And17Operators, outsideNovember16And17),
+  '2026-11-14_2026-11-15': excludeOutsideQuadrant(november14And15Operators, outsideNovember14And15),
 }

@@ -79,10 +79,6 @@ export function downloadTwoDayResourcePdf(period, data, zone = '', operatorName 
     const zoneCards = zones
       .map((item) => ({ label: item, value: zoneBreakdown[item]?.unassignedResources ?? 0 }))
       .filter((item) => item.label !== 'Distrito sin asociar' || item.value > 0)
-    if (!zones.includes('Fuera de cuadrante')) {
-      const zonedUnassigned = zones.reduce((sum, item) => sum + (zoneBreakdown[item]?.unassignedResources ?? 0), 0)
-      zoneCards.push({ label: 'Fuera de cuadrante', value: data.unassignedResources - zonedUnassigned })
-    }
 
     pdf.setTextColor(35, 49, 64); pdf.setFontSize(11); pdf.setFont('helvetica', 'bold')
     pdf.text(period.zoneSectionTitle ?? 'M\u00d3VILES SIN ASIGNAR POR CUADRANTE', 14, 165)
@@ -104,7 +100,7 @@ export function downloadTwoDayResourcePdf(period, data, zone = '', operatorName 
   pdf.setTextColor(35, 49, 64); pdf.setFontSize(9); pdf.setFont('helvetica', 'bold')
   pdf.text('OBSERVACIONES', 14, observationY)
   pdf.setTextColor(91, 112, 130); pdf.setFontSize(10); pdf.setFont('helvetica', 'normal')
-  const observation = 'Las fallas detectadas en la asignación incorrecta de móviles no responden a una única causa. Un porcentaje de las mismas se origina en falencias propias del móvil, mientras que el porcentaje restante corresponde a falencias del radio operador al momento de efectuar la asignación del móvil.'
+  const observation = 'Las fallas detectadas en la asignación incorrecta de móviles no responden a una única causa. Un porcentaje de las mismas se origina en falencias propias del móvil, mientras que el porcentaje restante corresponde a falencias del radio operador al momento de efectuar la asignación del móvil. Asimismo, se informa que las cartas trabajadas fuera del cuadrante no se contabilizarán dentro del total de eventos.'
   pdf.text(pdf.splitTextToSize(observation, 180), 14, observationY + 8)
 
   pdf.setTextColor(110, 128, 144); pdf.setFontSize(8); pdf.setFont('helvetica', 'normal')

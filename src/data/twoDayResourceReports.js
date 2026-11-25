@@ -6,7 +6,7 @@ const stats = (totalEvents = 0, correctlyAssignedResources = 0, incorrectlyAssig
   unassignedResources,
 })
 
-const zoneNames = ['Norte 1', 'Norte 2', 'Este 1', 'Este 2', 'Sur 1', 'Sur 2', 'Centro', 'Oeste', 'Fuera de cuadrante']
+const zoneNames = ['Norte 1', 'Norte 2', 'Este 1', 'Este 2', 'Sur 1', 'Sur 2', 'Centro', 'Oeste']
 const addStats = (left, right) => stats(
   left.totalEvents + right.totalEvents,
   left.correctlyAssignedResources + right.correctlyAssignedResources,
@@ -28,11 +28,11 @@ export const twoDayResourceReports = [
     zoneSectionTitle: 'MÓVILES SIN ASIGNAR POR FRECUENCIA',
     shifts: [
       { shift: 'A', ...stats() },
-      { shift: 'B', ...stats(185, 138, 41, 6) },
+      { shift: 'B', ...stats(173, 135, 36, 2) },
       { shift: 'C', ...stats() },
-      { shift: 'D', ...stats(297, 235, 56, 6) },
-      { shift: 'E', ...stats(170, 120, 34, 16) },
-      { shift: 'F', ...stats(245, 147, 56, 42) },
+      { shift: 'D', ...stats(285, 226, 54, 5) },
+      { shift: 'E', ...stats(155, 115, 33, 7) },
+      { shift: 'F', ...stats(231, 142, 53, 36) },
     ],
     zoneBreakdown: {
       A: zones(),
@@ -58,7 +58,7 @@ export const twoDayResourceReports = [
         'Fuera de cuadrante': stats(14, 5, 3, 6), 'Distrito sin asociar': stats(18, 8, 6, 4),
       }),
     },
-    zoneBreakdownNote: 'Los eventos sin cuadrante se contabilizan como fuera de cuadrante.',
+    zoneBreakdownNote: 'Los eventos sin cuadrante se excluyen de los totales.',
   },
   {
     id: '2026-11-16_2026-11-17',
@@ -68,12 +68,12 @@ export const twoDayResourceReports = [
     zoneNames,
     zoneSectionTitle: 'MÓVILES SIN ASIGNAR POR FRECUENCIA',
     shifts: [
-      { shift: 'A', ...stats(174, 122, 49, 3) },
+      { shift: 'A', ...stats(164, 119, 45, 0) },
       { shift: 'B', ...stats() },
-      { shift: 'C', ...stats(300, 206, 87, 7) },
+      { shift: 'C', ...stats(286, 200, 82, 4) },
       { shift: 'D', ...stats() },
-      { shift: 'E', ...stats(89, 60, 25, 4) },
-      { shift: 'F', ...stats(107, 71, 23, 13) },
+      { shift: 'E', ...stats(85, 60, 23, 2) },
+      { shift: 'F', ...stats(104, 68, 23, 13) },
     ],
     zoneBreakdown: {
       A: zones({
@@ -99,7 +99,7 @@ export const twoDayResourceReports = [
         'Fuera de cuadrante': stats(3, 3, 0, 0), 'Distrito sin asociar': stats(5, 2, 1, 2),
       }),
     },
-    zoneBreakdownNote: 'Los eventos sin cuadrante se contabilizan como fuera de cuadrante.',
+    zoneBreakdownNote: 'Los eventos sin cuadrante se excluyen de los totales.',
   },
   {
     id: '2026-11-14_2026-11-15',
@@ -110,11 +110,11 @@ export const twoDayResourceReports = [
     zoneSectionTitle: 'MÓVILES SIN ASIGNAR POR FRECUENCIA',
     shifts: [
       { shift: 'A', ...stats() },
-      { shift: 'B', ...stats(225, 159, 45, 21) },
+      { shift: 'B', ...stats(206, 155, 40, 11) },
       { shift: 'C', ...stats() },
-      { shift: 'D', ...stats(411, 277, 121, 13) },
-      { shift: 'E', ...stats(137, 104, 28, 5) },
-      { shift: 'F', ...stats(344, 173, 112, 59) },
+      { shift: 'D', ...stats(395, 270, 114, 11) },
+      { shift: 'E', ...stats(129, 101, 26, 2) },
+      { shift: 'F', ...stats(332, 171, 109, 52) },
     ],
     zoneBreakdown: {
       A: zones(),
@@ -140,7 +140,7 @@ export const twoDayResourceReports = [
         'Fuera de cuadrante': stats(12, 2, 3, 7), 'Distrito sin asociar': stats(22, 14, 7, 1),
       }),
     },
-    zoneBreakdownNote: 'Los eventos sin cuadrante se contabilizan como fuera de cuadrante.',
+    zoneBreakdownNote: 'Los eventos sin cuadrante se excluyen de los totales.',
   },
 ]
 
