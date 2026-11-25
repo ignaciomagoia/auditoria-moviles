@@ -6,8 +6,17 @@ const stats = (totalEvents = 0, correctlyAssignedResources = 0, incorrectlyAssig
   unassignedResources,
 })
 
-const zoneNames = ['Norte 1', 'Norte 2', 'Este 1', 'Este 2', 'Sur 1', 'Sur 2', 'Centro', 'Oeste', 'Fuera de cuadrante', 'Distrito sin asociar']
-const zones = (entries = {}) => Object.fromEntries(zoneNames.map((name) => [name, entries[name] ?? stats()]))
+const zoneNames = ['Norte 1', 'Norte 2', 'Este 1', 'Este 2', 'Sur 1', 'Sur 2', 'Centro', 'Oeste', 'Fuera de cuadrante']
+const addStats = (left, right) => stats(
+  left.totalEvents + right.totalEvents,
+  left.correctlyAssignedResources + right.correctlyAssignedResources,
+  left.incorrectlyAssignedResources + right.incorrectlyAssignedResources,
+  left.unassignedResources + right.unassignedResources,
+)
+const zones = (entries = {}) => {
+  const norte1 = addStats(entries['Norte 1'] ?? stats(), entries['Distrito sin asociar'] ?? stats())
+  return Object.fromEntries(zoneNames.map((name) => [name, name === 'Norte 1' ? norte1 : entries[name] ?? stats()]))
+}
 
 export const twoDayResourceReports = [
   {
