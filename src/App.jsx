@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { BarChart3, Download, RotateCcw } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { excludeReplacedDailyRecords, parseWorkbook } from './lib/excel'
+import { excludeReplacedDailyRecords, normalizeText, parseWorkbook } from './lib/excel'
 import { downloadShiftPdf } from './lib/report'
 import { twoDayResourceReports } from './data/twoDayResourceReports.js'
 import { resourceOperatorsByPeriod } from './data/resourceOperators.js'
 import { calculateCompliance, downloadTwoDayResourcePdf } from './lib/twoDayResourceReport.js'
+import { parseIncidentReports } from './lib/incidentReports.js'
 
 const TURNOS = ['A', 'B', 'C', 'D', 'E', 'F']
 const TURN_COLORS = { A: '#7030A0', B: '#274E13', C: '#FF0000', D: '#1155CC', E: '#00FFFF', F: '#FF00FF' }
@@ -27,13 +28,79 @@ function Filters({ records, filters, setFilters, view, setView }) {
     auditor: ['Todos', ...Array.from(new Set(records.flatMap((record) => record.auditorList))).sort((a, b) => a.localeCompare(b, 'es'))],
   }
   const update = (key) => (event) => setFilters((current) => ({ ...current, [key]: event.target.value }))
-  return <div className="filters simplified-filters">
-    <label>Contenido<select value={view} onChange={(event) => setView(event.target.value)}><option value="audits">Auditorías por turno</option><option value="two-day-reports">Informes de recursos</option></select></label>
-    <label>Mes / período<select value={filters.month} onChange={update('month')}>{options.month.map((item) => <option key={item}>{item}</option>)}</select></label>
+  return <div className={`filters simplified-filters ${view === 'incident-follow-up' ? 'follow-up-switcher' : ''}`}>
+    <label>Contenido<select value={view} onChange={(event) => setView(event.target.value)}><option value="audits">Auditorías por turno</option><option value="two-day-reports">Informes de recursos</option><option value="incident-follow-up">Seguimiento de informes</option></select></label>
+    {view === 'incident-follow-up' ? <p className="filter-help">Consulte informes por período, zona, dotación, dominio, efectivo o estado de resolución.</p> : <><label>Mes / período<select value={filters.month} onChange={update('month')}>{options.month.map((item) => <option key={item}>{item}</option>)}</select></label>
     <label>Semana<select value={filters.week} onChange={update('week')}>{options.week.map((item) => <option key={item}>{item}</option>)}</select></label>
     <label>Auditor<select value={filters.auditor} onChange={update('auditor')}>{options.auditor.map((item) => <option key={item}>{item}</option>)}</select></label>
-    <button className="clear" onClick={() => setFilters({ month: 'Todos', week: 'Todas', auditor: 'Todos' })}><RotateCcw size={16} /> Limpiar filtros</button>
+    <button className="clear" onClick={() => setFilters({ month: 'Todos', week: 'Todas', auditor: 'Todos' })}><RotateCcw size={16} /> Limpiar filtros</button></>}
   </div>
+}
+
+function FollowUpReports() {
+  const [records, setRecords] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [filters, setFilters] = useState({ search: '', month: 'Todos', zone: 'Todas', staffing: '', role: '', resolution: 'Todas' })
+
+  useEffect(() => {
+    fetch('/seguimiento-informes.xlsx', { cache: 'no-store' })
+      .then((response) => response.ok ? response.arrayBuffer() : Promise.reject())
+      .then((buffer) => setRecords(parseIncidentReports(buffer)))
+      .catch(() => setRecords([]))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const options = useMemo(() => ({
+    month: ['Todos', ...Array.from(new Set(records.map((record) => record.month))).sort((a, b) => a.localeCompare(b, 'es'))],
+    zone: ['Todas', ...Array.from(new Set(records.map((record) => record.zone))).sort((a, b) => a.localeCompare(b, 'es'))],
+  }), [records])
+
+  const filtered = useMemo(() => {
+    const search = normalizeText(filters.search)
+    const staffing = normalizeText(filters.staffing)
+    const role = normalizeText(filters.role)
+    return records.filter((record) => {
+      const searchable = normalizeText([record.number, record.date, record.zone, record.staffing, record.domain, record.primaryRole, record.secondaryRole, record.pdf, record.resolution].join(' '))
+      const roles = normalizeText(`${record.primaryRole} ${record.secondaryRole}`)
+      return (!search || searchable.includes(search))
+        && (filters.month === 'Todos' || record.month === filters.month)
+        && (filters.zone === 'Todas' || record.zone === filters.zone)
+        && (!staffing || normalizeText(record.staffing).includes(staffing))
+        && (!role || roles.includes(role))
+        && (filters.resolution === 'Todas' || (filters.resolution === 'Con resolución' ? Boolean(record.resolution) : !record.resolution))
+    }).sort((a, b) => b.sortDate.localeCompare(a.sortDate) || Number(b.number) - Number(a.number))
+  }, [records, filters])
+
+  const update = (key) => (event) => setFilters((current) => ({ ...current, [key]: event.target.value }))
+  const clear = () => setFilters({ search: '', month: 'Todos', zone: 'Todas', staffing: '', role: '', resolution: 'Todas' })
+  const resolved = filtered.filter((record) => record.resolution).length
+  const consulted = filtered.filter((record) => record.consultationDate).length
+
+  return <section className="incident-follow-up" aria-label="Seguimiento de informes">
+    <div className="summary-heading"><div><p className="eyebrow">Control operativo</p><h2>Seguimiento de informes</h2><p>Consulta de dotaciones, dominios, efectivos y resoluciones asociadas a cada informe.</p></div></div>
+    <div className="incident-filters">
+      <label className="incident-search">Búsqueda general<input value={filters.search} onChange={update('search')} placeholder="Nº, dotación, dominio, efectivo o resolución" /></label>
+      <label>Período<select value={filters.month} onChange={update('month')}>{options.month.map((item) => <option key={item}>{item}</option>)}</select></label>
+      <label>Zona<select value={filters.zone} onChange={update('zone')}>{options.zone.map((item) => <option key={item}>{item}</option>)}</select></label>
+      <label>Dotación<input value={filters.staffing} onChange={update('staffing')} placeholder="Ej. COLON 12" /></label>
+      <label>Rol de combate<input value={filters.role} onChange={update('role')} placeholder="Nombre o cargo" /></label>
+      <label>Resolución<select value={filters.resolution} onChange={update('resolution')}><option>Todas</option><option>Con resolución</option><option>Sin resolución</option></select></label>
+      <button className="clear" onClick={clear}><RotateCcw size={16} /> Limpiar búsqueda</button>
+    </div>
+    {loading ? <p className="summary-empty">Cargando seguimiento de informes…</p> : <>
+      <div className="incident-metrics">
+        <Metric label="Informes encontrados" value={filtered.length} tone="navy" />
+        <Metric label="Con resolución" value={resolved} tone="green" />
+        <Metric label="Sin resolución" value={filtered.length - resolved} tone="amber" />
+        <Metric label="Con fecha de consulta" value={consulted} tone="blue" />
+      </div>
+      <div className="incident-table-wrap"><table className="incident-table"><thead><tr><th>Nº</th><th>Fecha</th><th>Zona</th><th>Dotación</th><th>Dominio</th><th>Rol de combate</th><th>Resolución</th><th>Consulta</th></tr></thead><tbody>{filtered.map((record) => <tr key={record.id}><td><b>{record.number}</b><small>{record.pdf || 'Sin adjunto'}</small></td><td>{record.date}</td><td><span className="zone-pill">{record.zone}</span></td><td><b>{record.staffing}</b></td><td>{record.domain}</td><td><b>{record.primaryRole}</b>{record.secondaryRole !== 'Sin consignar' && <small>{record.secondaryRole}</small>}</td><td className="resolution-cell" title={record.resolution}>{record.resolution || <span className="pending-resolution">Pendiente</span>}</td><td>{record.consultationDate || '—'}</td></tr>)}</tbody></table>{!filtered.length && <p className="summary-empty">No se encontraron informes con esos filtros.</p>}</div>
+    </>}
+  </section>
+}
+
+function Metric({ label, value, tone }) {
+  return <article className={`metric ${tone}`}><span>{label}</span><strong>{format.format(value)}</strong></article>
 }
 
 function TwoDayResourceReports() {
@@ -168,7 +235,7 @@ export default function App() {
   const filtered = useMemo(() => periodRecords.filter((record) => filters.auditor === 'Todos' || record.auditorList.includes(filters.auditor)), [periodRecords, filters.auditor])
   const requestPdf = (shift, shiftRecords) => { setPdfObservation(''); setPdfRequest({ shift, records: shiftRecords }) }
   const generatePdf = () => { if (!pdfRequest) return; downloadShiftPdf(pdfRequest.shift, pdfRequest.records, TURN_COLORS[pdfRequest.shift], periodRecords, pdfObservation); setPdfRequest(null); setPdfObservation('') }
-  return <><Header active="dashboard" /><main className="app-shell"><section className="intro"><div><p className="eyebrow">Última semana cargada · {latestWeek}</p><h1>Auditoría de móviles</h1><p>Seguimiento de alertas y cumplimiento por turno.</p></div></section><Filters records={availableRecords} filters={filters} setFilters={setFilters} view={view} setView={setView} />{view === 'two-day-reports' ? <TwoDayResourceReports /> : <><ShiftBlocks records={filtered} onRequestPdf={requestPdf} /><Charts records={filtered} /></>}</main><PdfModal request={pdfRequest} observation={pdfObservation} onObservationChange={setPdfObservation} onCancel={() => { setPdfRequest(null); setPdfObservation('') }} onGenerate={generatePdf} /></>
+  return <><Header active="dashboard" /><main className="app-shell"><section className="intro"><div><p className="eyebrow">Última semana cargada · {latestWeek}</p><h1>Auditoría de móviles</h1><p>Seguimiento de alertas y cumplimiento por turno.</p></div></section><Filters records={availableRecords} filters={filters} setFilters={setFilters} view={view} setView={setView} />{view === 'two-day-reports' ? <TwoDayResourceReports /> : view === 'incident-follow-up' ? <FollowUpReports /> : <><ShiftBlocks records={filtered} onRequestPdf={requestPdf} /><Charts records={filtered} /></>}</main><PdfModal request={pdfRequest} observation={pdfObservation} onObservationChange={setPdfObservation} onCancel={() => { setPdfRequest(null); setPdfObservation('') }} onGenerate={generatePdf} /></>
 }
 
 function Header() { return <header className="topbar"><a className="brand" href="/"><span className="brand-mark"><BarChart3 size={19} /></span><span>Auditoría <b>2026</b></span></a></header> }
