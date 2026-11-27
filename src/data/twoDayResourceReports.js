@@ -20,6 +20,43 @@ const zones = (entries = {}) => {
 
 export const twoDayResourceReports = [
   {
+    id: '2026-11-24_2026-11-25',
+    label: '24/11 – 25/11',
+    startDate: '2026-11-24',
+    endDate: '2026-11-25',
+    zoneNames,
+    zoneSectionTitle: 'MÓVILES SIN ASIGNAR POR FRECUENCIA',
+    shifts: [
+      { shift: 'A', ...stats(180, 141, 39, 0) },
+      { shift: 'B', ...stats() },
+      { shift: 'C', ...stats(293, 267, 24, 2) },
+      { shift: 'D', ...stats() },
+      { shift: 'E', ...stats(136, 110, 19, 7) },
+      { shift: 'F', ...stats(71, 52, 10, 9) },
+    ],
+    zoneBreakdown: {
+      A: zones({
+        'Norte 1': stats(39, 36, 3, 0), 'Este 1': stats(41, 29, 12, 0), 'Este 2': stats(20, 11, 9, 0), 'Sur 1': stats(28, 25, 3, 0),
+        'Sur 2': stats(9, 9, 0, 0), Centro: stats(18, 12, 6, 0), Oeste: stats(25, 19, 6, 0),
+      }),
+      B: zones(),
+      C: zones({
+        'Norte 1': stats(63, 54, 9, 0), 'Este 1': stats(53, 43, 9, 1), 'Este 2': stats(36, 36, 0, 0), 'Sur 1': stats(33, 32, 1, 0),
+        'Sur 2': stats(15, 13, 2, 0), Centro: stats(41, 39, 1, 1), Oeste: stats(52, 50, 2, 0),
+      }),
+      D: zones(),
+      E: zones({
+        'Norte 1': stats(22, 14, 7, 1), 'Norte 2': stats(1, 1, 0, 0), 'Este 1': stats(33, 31, 1, 1), 'Este 2': stats(15, 14, 0, 1),
+        'Sur 1': stats(13, 9, 1, 3), 'Sur 2': stats(9, 8, 1, 0), Centro: stats(15, 13, 2, 0), Oeste: stats(28, 20, 7, 1),
+      }),
+      F: zones({
+        'Norte 1': stats(13, 10, 2, 1), 'Norte 2': stats(2, 2, 0, 0), 'Este 1': stats(16, 11, 5, 0), 'Este 2': stats(9, 8, 1, 0),
+        'Sur 1': stats(4, 3, 0, 1), 'Sur 2': stats(4, 4, 0, 0), Centro: stats(11, 7, 0, 4), Oeste: stats(12, 7, 2, 3),
+      }),
+    },
+    zoneBreakdownNote: 'Los eventos sin cuadrante se excluyen de los totales.',
+  },
+  {
     id: '2026-11-22_2026-11-23',
     label: '22/11 – 23/11',
     startDate: '2026-11-22',

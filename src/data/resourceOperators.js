@@ -193,6 +193,30 @@ const november22And23Operators = [
   operator(name, shift, totalEvents, correctlyAssignedResources, incorrectlyAssignedResources, unassignedResources)
 ))
 
+const november24And25Operators = [
+  ['agustina.amaya', 'A', 25, 22, 3, 0], ['deborah.juarez', 'A', 9, 9, 0, 0], ['erika.aguirre', 'A', 1, 1, 0, 0],
+  ['florencia.ojeda', 'A', 11, 8, 3, 0], ['florencia.rosso', 'A', 15, 8, 7, 0], ['gabriel.diaz', 'A', 16, 11, 5, 0],
+  ['gabriela.rojas', 'A', 3, 2, 1, 0], ['leandro.iglesias', 'A', 16, 15, 1, 0], ['maria.jabour', 'A', 1, 1, 0, 0],
+  ['melisa.bonaldi', 'A', 11, 7, 4, 0], ['nicolas.murua', 'A', 1, 0, 1, 0], ['noelia.gorosito', 'A', 7, 4, 3, 0],
+  ['santiago.guzman', 'A', 32, 24, 8, 0], ['sofia.gonzalez', 'A', 1, 1, 0, 0], ['sofia.rocchelli', 'A', 1, 1, 0, 0],
+  ['sol.maldonado', 'A', 26, 23, 3, 0], ['valentina.gomez', 'A', 3, 3, 0, 0], ['walter.moreno', 'A', 1, 1, 0, 0],
+  ['agostina.cabral', 'C', 3, 3, 0, 0], ['ana.varela', 'C', 14, 14, 0, 0], ['facundo.barrionuevo', 'C', 3, 3, 0, 0],
+  ['franco.barrionuevo', 'C', 1, 1, 0, 0], ['gonzalo.canut', 'C', 14, 12, 2, 0], ['ivon.ocaño', 'C', 16, 16, 0, 0],
+  ['jazmin.orioni', 'C', 22, 20, 1, 1], ['leandro.iglesias', 'C', 1, 0, 1, 0], ['maria.jabour', 'C', 17, 14, 3, 0],
+  ['martina.gomez', 'C', 38, 37, 0, 1], ['martina.guzman', 'C', 12, 11, 1, 0], ['mayra.matrangulo', 'C', 21, 17, 4, 0],
+  ['nicolas.murua', 'C', 49, 47, 2, 0], ['nicolas.uliarte', 'C', 2, 2, 0, 0], ['noelia.farias', 'C', 15, 12, 3, 0],
+  ['regina.olmedo', 'C', 33, 30, 3, 0], ['sofia.gonzalez', 'C', 17, 16, 1, 0], ['sofia.jabour', 'C', 14, 11, 3, 0], ['wanda.peralta', 'C', 1, 1, 0, 0],
+  ['agostina.cabral', 'E', 11, 10, 1, 0], ['alexander.montaño', 'E', 22, 21, 1, 0], ['camila.quevedo', 'E', 17, 15, 0, 2],
+  ['daniela.gonzalez', 'E', 11, 10, 1, 0], ['facundo.barrionuevo', 'E', 13, 9, 1, 3], ['franco.barrionuevo', 'E', 8, 7, 1, 0],
+  ['julieta.aguirre', 'E', 3, 3, 0, 0], ['leandro.iglesias', 'E', 1, 1, 0, 0], ['mia.ledesma', 'E', 4, 1, 3, 0],
+  ['nancy.farias', 'E', 13, 10, 3, 0], ['noelia.gorosito', 'E', 1, 1, 0, 0], ['wanda.peralta', 'E', 10, 9, 1, 0], ['yamila.vega', 'E', 22, 13, 7, 2],
+  ['carla.perez', 'F', 8, 7, 1, 0], ['david.bosio', 'F', 13, 8, 0, 5], ['elodina.barrera', 'F', 2, 0, 1, 1],
+  ['gabriel.aguirre', 'F', 7, 6, 0, 1], ['gonzalo.canut', 'F', 4, 4, 0, 0], ['isabel.leiva', 'F', 3, 2, 1, 0],
+  ['julian.albaro', 'F', 11, 7, 4, 0], ['mondel.gomez', 'F', 16, 12, 3, 1], ['paola.escalzo', 'F', 4, 3, 0, 1], ['santiago.repiso', 'F', 3, 3, 0, 0],
+].map(([name, shift, totalEvents, correctlyAssignedResources, incorrectlyAssignedResources, unassignedResources]) => (
+  operator(name, shift, totalEvents, correctlyAssignedResources, incorrectlyAssignedResources, unassignedResources)
+))
+
 const outsideAdjustments = (rows) => new Map(rows.map(([name, shift, totalEvents, correctlyAssignedResources, incorrectlyAssignedResources, unassignedResources]) => [
   `${name}|${shift}`,
   { totalEvents, correctlyAssignedResources, incorrectlyAssignedResources, unassignedResources },
@@ -248,6 +272,7 @@ const outsideNovember22And23 = outsideAdjustments([
 ])
 
 export const resourceOperatorsByPeriod = {
+  '2026-11-24_2026-11-25': november24And25Operators,
   '2026-11-22_2026-11-23': excludeOutsideQuadrant(november22And23Operators, outsideNovember22And23),
   '2026-11-16_2026-11-17': excludeOutsideQuadrant(november16And17Operators, outsideNovember16And17),
   '2026-11-14_2026-11-15': excludeOutsideQuadrant(november14And15Operators, outsideNovember14And15),
