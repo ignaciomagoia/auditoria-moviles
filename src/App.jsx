@@ -29,7 +29,7 @@ function Filters({ records, filters, setFilters, view, setView }) {
   }
   const update = (key) => (event) => setFilters((current) => ({ ...current, [key]: event.target.value }))
   return <div className={`filters simplified-filters ${view === 'incident-follow-up' ? 'follow-up-switcher' : ''}`}>
-    <label>Contenido<select value={view} onChange={(event) => setView(event.target.value)}><option value="audits">Auditorías por turno</option><option value="two-day-reports">Informes de recursos</option><option value="incident-follow-up">Seguimiento de informes</option></select></label>
+    <label>Contenido<select value={view} onChange={(event) => setView(event.target.value)}><option value="two-day-reports">Informes de recursos</option><option value="incident-follow-up">Seguimiento de informes</option></select></label>
     {view === 'incident-follow-up' ? <p className="filter-help">Consulte informes por período, zona, dotación, dominio, efectivo o estado de resolución.</p> : <><label>Mes / período<select value={filters.month} onChange={update('month')}>{options.month.map((item) => <option key={item}>{item}</option>)}</select></label>
     <label>Semana<select value={filters.week} onChange={update('week')}>{options.week.map((item) => <option key={item}>{item}</option>)}</select></label>
     <label>Auditor<select value={filters.auditor} onChange={update('auditor')}>{options.auditor.map((item) => <option key={item}>{item}</option>)}</select></label>
@@ -225,7 +225,7 @@ function PdfModal({ request, observation, onObservationChange, onCancel, onGener
 export default function App() {
   const [records, setRecords] = useState([])
   const [filters, setFilters] = useState({ month: 'Todos', week: 'Todas', auditor: 'Todos' })
-  const [view, setView] = useState('audits')
+  const [view, setView] = useState('two-day-reports')
   const [pdfRequest, setPdfRequest] = useState(null)
   const [pdfObservation, setPdfObservation] = useState('')
   useEffect(() => { fetch('/auditoria-2026.xlsx', { cache: 'no-store' }).then((response) => response.ok ? response.arrayBuffer() : Promise.reject()).then((buffer) => setRecords(parseWorkbook(buffer).records)).catch(() => {}) }, [])
