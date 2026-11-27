@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, BarChart3, Download, RotateCcw } from 'lucide-react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
+import { AlertTriangle, BarChart3, ChevronDown, ChevronUp, Download, RotateCcw } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { excludeReplacedDailyRecords, normalizeText, parseWorkbook } from './lib/excel'
 import { downloadShiftPdf } from './lib/report'
@@ -41,6 +41,7 @@ function FollowUpReports() {
   const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({ search: '', month: 'Todos', zone: 'Todas', staffing: '', role: '', resolution: 'Todas', recurrence: 'Todas' })
+  const [expandedMatchId, setExpandedMatchId] = useState('')
 
   useEffect(() => {
     fetch('/seguimiento-informes.xlsx', { cache: 'no-store' })
@@ -88,6 +89,31 @@ function FollowUpReports() {
     return warnings
   }, [recurrences])
 
+  const relatedGroupsFor = useCallback((record) => {
+    const staffingKey = recurrences.identity(record.staffing)
+    const primaryKey = recurrences.identity(record.primaryRole)
+    const secondaryKey = recurrences.identity(record.secondaryRole)
+    const pairKey = primaryKey && secondaryKey ? [primaryKey, secondaryKey].sort().join('|') : ''
+    const showType = (type) => filters.recurrence === 'Todas' || filters.recurrence === 'Con advertencias' || filters.recurrence === type
+    const groups = []
+    if (showType('Dotación repetida') && (recurrences.staffing.get(staffingKey) ?? 0) >= 2) {
+      groups.push({ label: `Dotación repetida · ${record.staffing}`, records: records.filter((item) => item.id !== record.id && recurrences.identity(item.staffing) === staffingKey) })
+    }
+    if (showType('Dupla repetida') && (recurrences.pairs.get(pairKey) ?? 0) >= 2) {
+      groups.push({ label: `Dupla repetida · ${record.primaryRole} + ${record.secondaryRole}`, records: records.filter((item) => {
+        const itemPrimary = recurrences.identity(item.primaryRole)
+        const itemSecondary = recurrences.identity(item.secondaryRole)
+        return item.id !== record.id && itemPrimary && itemSecondary && [itemPrimary, itemSecondary].sort().join('|') === pairKey
+      }) })
+    }
+    const personnel = [[primaryKey, record.primaryRole], [secondaryKey, record.secondaryRole]]
+    new Map(personnel.filter(([key]) => key).map(([key, label]) => [key, label])).forEach((label, key) => {
+      if (!showType('Personal repetido') || (recurrences.personnel.get(key) ?? 0) < 2) return
+      groups.push({ label: `Personal repetido · ${label}`, records: records.filter((item) => item.id !== record.id && [recurrences.identity(item.primaryRole), recurrences.identity(item.secondaryRole)].includes(key)) })
+    })
+    return groups.filter((group) => group.records.length)
+  }, [filters.recurrence, records, recurrences])
+
   const filtered = useMemo(() => {
     const search = normalizeText(filters.search)
     const staffing = normalizeText(filters.staffing)
@@ -111,8 +137,8 @@ function FollowUpReports() {
     }).sort((a, b) => b.sortDate.localeCompare(a.sortDate) || Number(b.number) - Number(a.number))
   }, [records, filters, warningsFor])
 
-  const update = (key) => (event) => setFilters((current) => ({ ...current, [key]: event.target.value }))
-  const clear = () => setFilters({ search: '', month: 'Todos', zone: 'Todas', staffing: '', role: '', resolution: 'Todas', recurrence: 'Todas' })
+  const update = (key) => (event) => { setFilters((current) => ({ ...current, [key]: event.target.value })); setExpandedMatchId('') }
+  const clear = () => { setFilters({ search: '', month: 'Todos', zone: 'Todas', staffing: '', role: '', resolution: 'Todas', recurrence: 'Todas' }); setExpandedMatchId('') }
   const resolved = filtered.filter((record) => record.resolution).length
   const consulted = filtered.filter((record) => record.consultationDate).length
   const recurringRecords = filtered.filter((record) => warningsFor(record).length).length
@@ -137,7 +163,15 @@ function FollowUpReports() {
         <Metric label="Con fecha de consulta" value={consulted} tone="blue" />
       </div>
       {recurringRecords > 0 && <p className="recurrence-banner"><AlertTriangle size={18} /><span><b>Advertencia de reincidencia:</b> {recurringRecords} {recurringRecords === 1 ? 'informe con advertencia detectada.' : 'informes con advertencias detectadas.'}</span></p>}
-      <div className="incident-table-wrap"><table className="incident-table"><thead><tr><th>Nº</th><th>Fecha</th><th>Zona</th><th>Dotación</th><th>Dominio</th><th>Rol de combate</th><th>Resolución</th><th>Consulta</th></tr></thead><tbody>{filtered.map((record) => <tr key={record.id}><td><b>{record.number}</b><small>{record.pdf || 'Sin adjunto'}</small></td><td>{record.date}</td><td><span className="zone-pill">{record.zone}</span></td><td><b>{record.staffing}</b></td><td>{record.domain}</td><td><b>{record.primaryRole}</b>{record.secondaryRole !== 'Sin consignar' && <small>{record.secondaryRole}</small>}</td><td className="resolution-cell" title={record.resolution}>{record.resolution || <span className="pending-resolution">Pendiente</span>}</td><td>{record.consultationDate || '—'}</td></tr>)}</tbody></table>{!filtered.length && <p className="summary-empty">No se encontraron informes con esos filtros.</p>}</div>
+      <div className="incident-table-wrap"><table className="incident-table"><thead><tr><th>Nº</th><th>Fecha</th><th>Zona</th><th>Dotación</th><th>Dominio</th><th>Rol de combate</th><th>Resolución</th><th>Consulta</th></tr></thead><tbody>{filtered.map((record) => {
+        const warnings = warningsFor(record)
+        const isExpanded = expandedMatchId === record.id
+        const relatedGroups = isExpanded ? relatedGroupsFor(record) : []
+        return <Fragment key={record.id}>
+          <tr><td><div className="report-number"><div><b>{record.number}</b><small>{record.pdf || 'Sin adjunto'}</small></div>{warnings.length > 0 && <button className="match-toggle" onClick={() => setExpandedMatchId(isExpanded ? '' : record.id)} aria-expanded={isExpanded} title="Ver informes relacionados">{isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</button>}</div></td><td>{record.date}</td><td><span className="zone-pill">{record.zone}</span></td><td><b>{record.staffing}</b></td><td>{record.domain}</td><td><b>{record.primaryRole}</b>{record.secondaryRole !== 'Sin consignar' && <small>{record.secondaryRole}</small>}</td><td className="resolution-cell" title={record.resolution}>{record.resolution || <span className="pending-resolution">Pendiente</span>}</td><td>{record.consultationDate || '—'}</td></tr>
+          {isExpanded && <tr className="related-row"><td colSpan="8"><div className="related-reports"><b>Informes relacionados</b>{relatedGroups.map((group) => <section key={group.label}><strong>{group.label}</strong><div>{group.records.map((item) => <article key={item.id}><span>Informe {item.number}</span><span>{item.date}</span><span>{item.staffing}</span><span>{item.zone}</span></article>)}</div></section>)}{!relatedGroups.length && <span>No hay coincidencias adicionales para el filtro seleccionado.</span>}</div></td></tr>}
+        </Fragment>
+      })}</tbody></table>{!filtered.length && <p className="summary-empty">No se encontraron informes con esos filtros.</p>}</div>
     </>}
   </section>
 }

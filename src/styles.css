@@ -51,6 +51,17 @@ nav { height: 100%; display: flex; align-items: center; gap: 5px; } nav a { heig
 .resolution-cell { width: 290px; line-height: 1.4; }
 .zone-pill { display: inline-flex; padding: 4px 8px; color: #1e6876; background: #e6f3f4; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
 .pending-resolution { color: #9b7228; font-weight: 700; }
+.report-number { display: flex; gap: 8px; align-items: flex-start; justify-content: space-between; }
+.match-toggle { width: 26px; height: 26px; padding: 0; display: inline-grid; flex: 0 0 auto; place-items: center; color: #9a6a10; background: #fff7e3; border: 1px solid #f0d18a; border-radius: 5px; }
+.match-toggle:hover { color: #fff; background: #b17700; border-color: #b17700; }
+.related-row td { padding: 0; background: #fffaf0; }
+.related-reports { padding: 14px 16px 16px; color: #536b7e; border-top: 1px solid #f0dfb4; font-size: 12px; }
+.related-reports > b { display: block; margin-bottom: 10px; color: #765716; font: 700 13px Manrope, sans-serif; }
+.related-reports section + section { margin-top: 11px; }
+.related-reports section > strong { display: block; margin-bottom: 6px; color: #86621a; font-size: 11px; }
+.related-reports section > div { display: grid; gap: 6px; }
+.related-reports article { padding: 8px 10px; display: grid; grid-template-columns: 90px 100px minmax(150px, 1fr) 110px; gap: 10px; color: #445f74; background: #fff; border: 1px solid #f0dfb4; border-radius: 5px; }
+.related-reports article span:first-child { color: #17334c; font-weight: 700; }
 .recurrence-banner { margin: 0 0 16px; padding: 12px 14px; display: flex; gap: 10px; align-items: flex-start; color: #765716; background: #fff8e5; border: 1px solid #f2d48c; border-radius: 6px; font-size: 12px; line-height: 1.45; }
 .recurrence-banner svg { flex: 0 0 auto; margin-top: 1px; color: #b17700; }
 @media (max-width: 1040px) { .follow-up-switcher { grid-template-columns: 1fr; align-items: end; }.incident-filters { grid-template-columns: 1fr 1fr 1fr; }.incident-filters .incident-search { grid-column: span 3; }.incident-metrics { grid-template-columns: 1fr 1fr; } }
