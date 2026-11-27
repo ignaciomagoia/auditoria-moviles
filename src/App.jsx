@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { BarChart3, Download, RotateCcw } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { AlertTriangle, BarChart3, Download, RotateCcw } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { excludeReplacedDailyRecords, normalizeText, parseWorkbook } from './lib/excel'
 import { downloadShiftPdf } from './lib/report'
@@ -40,7 +40,7 @@ function Filters({ records, filters, setFilters, view, setView }) {
 function FollowUpReports() {
   const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(true)
-  const [filters, setFilters] = useState({ search: '', month: 'Todos', zone: 'Todas', staffing: '', role: '', resolution: 'Todas' })
+  const [filters, setFilters] = useState({ search: '', month: 'Todos', zone: 'Todas', staffing: '', role: '', resolution: 'Todas', recurrence: 'Todas' })
 
   useEffect(() => {
     fetch('/seguimiento-informes.xlsx', { cache: 'no-store' })
@@ -55,6 +55,39 @@ function FollowUpReports() {
     zone: ['Todas', ...Array.from(new Set(records.map((record) => record.zone))).sort((a, b) => a.localeCompare(b, 'es'))],
   }), [records])
 
+  const recurrences = useMemo(() => {
+    const staffing = new Map()
+    const personnel = new Map()
+    const pairs = new Map()
+    const increment = (map, key) => map.set(key, (map.get(key) ?? 0) + 1)
+    const identity = (value) => {
+      const normalized = normalizeText(value)
+      return normalized === 'sin consignar' || normalized === 'sin dotacion' ? '' : normalized
+    }
+    records.forEach((record) => {
+      const staffingKey = identity(record.staffing)
+      const primaryKey = identity(record.primaryRole)
+      const secondaryKey = identity(record.secondaryRole)
+      if (staffingKey) increment(staffing, staffingKey)
+      new Set([primaryKey, secondaryKey].filter(Boolean)).forEach((person) => increment(personnel, person))
+      if (primaryKey && secondaryKey) increment(pairs, [primaryKey, secondaryKey].sort().join('|'))
+    })
+    return { staffing, personnel, pairs, identity }
+  }, [records])
+
+  const warningsFor = useCallback((record) => {
+    const staffingKey = recurrences.identity(record.staffing)
+    const primaryKey = recurrences.identity(record.primaryRole)
+    const secondaryKey = recurrences.identity(record.secondaryRole)
+    const pairKey = primaryKey && secondaryKey ? [primaryKey, secondaryKey].sort().join('|') : ''
+    const warnings = []
+    if ((recurrences.staffing.get(staffingKey) ?? 0) >= 2) warnings.push(`Dotación ×${recurrences.staffing.get(staffingKey)}`)
+    if ((recurrences.pairs.get(pairKey) ?? 0) >= 2) warnings.push(`Dupla ×${recurrences.pairs.get(pairKey)}`)
+    const personnelCount = Math.max(recurrences.personnel.get(primaryKey) ?? 0, recurrences.personnel.get(secondaryKey) ?? 0)
+    if (personnelCount >= 2) warnings.push(`Personal ×${personnelCount}`)
+    return warnings
+  }, [recurrences])
+
   const filtered = useMemo(() => {
     const search = normalizeText(filters.search)
     const staffing = normalizeText(filters.staffing)
@@ -62,19 +95,27 @@ function FollowUpReports() {
     return records.filter((record) => {
       const searchable = normalizeText([record.number, record.date, record.zone, record.staffing, record.domain, record.primaryRole, record.secondaryRole, record.pdf, record.resolution].join(' '))
       const roles = normalizeText(`${record.primaryRole} ${record.secondaryRole}`)
+      const warnings = warningsFor(record)
+      const matchesRecurrence = filters.recurrence === 'Todas'
+        || (filters.recurrence === 'Con advertencias' && warnings.length > 0)
+        || (filters.recurrence === 'Dotación repetida' && warnings.some((warning) => warning.startsWith('Dotación')))
+        || (filters.recurrence === 'Dupla repetida' && warnings.some((warning) => warning.startsWith('Dupla')))
+        || (filters.recurrence === 'Personal repetido' && warnings.some((warning) => warning.startsWith('Personal')))
       return (!search || searchable.includes(search))
         && (filters.month === 'Todos' || record.month === filters.month)
         && (filters.zone === 'Todas' || record.zone === filters.zone)
         && (!staffing || normalizeText(record.staffing).includes(staffing))
         && (!role || roles.includes(role))
         && (filters.resolution === 'Todas' || (filters.resolution === 'Con resolución' ? Boolean(record.resolution) : !record.resolution))
+        && matchesRecurrence
     }).sort((a, b) => b.sortDate.localeCompare(a.sortDate) || Number(b.number) - Number(a.number))
-  }, [records, filters])
+  }, [records, filters, warningsFor])
 
   const update = (key) => (event) => setFilters((current) => ({ ...current, [key]: event.target.value }))
-  const clear = () => setFilters({ search: '', month: 'Todos', zone: 'Todas', staffing: '', role: '', resolution: 'Todas' })
+  const clear = () => setFilters({ search: '', month: 'Todos', zone: 'Todas', staffing: '', role: '', resolution: 'Todas', recurrence: 'Todas' })
   const resolved = filtered.filter((record) => record.resolution).length
   const consulted = filtered.filter((record) => record.consultationDate).length
+  const recurringRecords = filtered.filter((record) => warningsFor(record).length).length
 
   return <section className="incident-follow-up" aria-label="Seguimiento de informes">
     <div className="summary-heading"><div><p className="eyebrow">Control operativo</p><h2>Seguimiento de informes</h2><p>Consulta de dotaciones, dominios, efectivos y resoluciones asociadas a cada informe.</p></div></div>
@@ -82,6 +123,7 @@ function FollowUpReports() {
       <label className="incident-search">Búsqueda general<input value={filters.search} onChange={update('search')} placeholder="Nº, dotación, dominio, efectivo o resolución" /></label>
       <label>Período<select value={filters.month} onChange={update('month')}>{options.month.map((item) => <option key={item}>{item}</option>)}</select></label>
       <label>Zona<select value={filters.zone} onChange={update('zone')}>{options.zone.map((item) => <option key={item}>{item}</option>)}</select></label>
+      <label>Advertencias<select value={filters.recurrence} onChange={update('recurrence')}><option>Todas</option><option>Con advertencias</option><option>Dotación repetida</option><option>Dupla repetida</option><option>Personal repetido</option></select></label>
       <label>Dotación<input value={filters.staffing} onChange={update('staffing')} placeholder="Ej. COLON 12" /></label>
       <label>Rol de combate<input value={filters.role} onChange={update('role')} placeholder="Nombre o cargo" /></label>
       <label>Resolución<select value={filters.resolution} onChange={update('resolution')}><option>Todas</option><option>Con resolución</option><option>Sin resolución</option></select></label>
@@ -94,6 +136,7 @@ function FollowUpReports() {
         <Metric label="Sin resolución" value={filtered.length - resolved} tone="amber" />
         <Metric label="Con fecha de consulta" value={consulted} tone="blue" />
       </div>
+      {recurringRecords > 0 && <p className="recurrence-banner"><AlertTriangle size={18} /><span><b>Advertencia de reincidencia:</b> {recurringRecords} {recurringRecords === 1 ? 'informe con advertencia detectada.' : 'informes con advertencias detectadas.'}</span></p>}
       <div className="incident-table-wrap"><table className="incident-table"><thead><tr><th>Nº</th><th>Fecha</th><th>Zona</th><th>Dotación</th><th>Dominio</th><th>Rol de combate</th><th>Resolución</th><th>Consulta</th></tr></thead><tbody>{filtered.map((record) => <tr key={record.id}><td><b>{record.number}</b><small>{record.pdf || 'Sin adjunto'}</small></td><td>{record.date}</td><td><span className="zone-pill">{record.zone}</span></td><td><b>{record.staffing}</b></td><td>{record.domain}</td><td><b>{record.primaryRole}</b>{record.secondaryRole !== 'Sin consignar' && <small>{record.secondaryRole}</small>}</td><td className="resolution-cell" title={record.resolution}>{record.resolution || <span className="pending-resolution">Pendiente</span>}</td><td>{record.consultationDate || '—'}</td></tr>)}</tbody></table>{!filtered.length && <p className="summary-empty">No se encontraron informes con esos filtros.</p>}</div>
     </>}
   </section>
